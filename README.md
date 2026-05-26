@@ -11,7 +11,7 @@ npm install -g github-sane-defaults
 Or run without installing:
 
 ```sh
-npx github-sane-defaults plan dutifuldev/scratch
+npx github-sane-defaults plan example-org/example-repo
 ```
 
 ## Authentication
@@ -31,22 +31,22 @@ repositories.
 Preview changes for one repository:
 
 ```sh
-github-sane-defaults plan dutifuldev/scratch
+github-sane-defaults plan example-org/example-repo
 ```
 
 Apply changes to one repository:
 
 ```sh
-github-sane-defaults apply dutifuldev/scratch
+github-sane-defaults apply example-org/example-repo
 ```
 
 Apply changes to every non-archived repository in an organization:
 
 ```sh
-github-sane-defaults apply dutifuldev --all
+github-sane-defaults apply example-org --all
 ```
 
-The legacy `--org dutifuldev --repo scratch` form is still accepted.
+The legacy `--org example-org --repo example-repo` form is still accepted.
 
 ## Defaults
 
