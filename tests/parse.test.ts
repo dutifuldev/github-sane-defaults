@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { parseRepo, parseRuleset, parseRulesetSummaries } from "../src/github/parse.js";
+import {
+  parseRepo,
+  parseRepoNames,
+  parseRuleset,
+  parseRulesetSummaries
+} from "../src/github/parse.js";
 import { DESIRED_REPO_SETTINGS, desiredRulesetPayload } from "../src/policy/defaults.js";
 
 describe("parseRepo", () => {
@@ -54,6 +59,21 @@ describe("parseRepo", () => {
   });
 });
 
+describe("parseRepoNames", () => {
+  it("parses repository names from GitHub list responses", () => {
+    expect(
+      parseRepoNames([
+        { name: "scratch", full_name: "dutifuldev/scratch" },
+        { name: "bob", full_name: "dutifuldev/bob" }
+      ])
+    ).toEqual(["scratch", "bob"]);
+  });
+
+  it("rejects non-array repository list responses", () => {
+    expect(() => parseRepoNames({})).toThrow("repos response must be an array");
+  });
+});
+
 describe("parseRulesetSummaries", () => {
   it("parses summary responses", () => {
     expect(
@@ -74,14 +94,14 @@ describe("parseRuleset", () => {
     });
   });
 
-  it("rejects unsupported rules", () => {
-    expect(() =>
+  it("preserves extra rules so drift can be repaired", () => {
+    expect(
       parseRuleset({
         id: 1,
         ...desiredRulesetPayload(),
-        rules: [{ type: "creation" }]
-      })
-    ).toThrow("unsupported ruleset rule");
+        rules: [...desiredRulesetPayload().rules, { type: "pull_request" }]
+      }).rules
+    ).toContainEqual({ type: "pull_request" });
   });
 
   it("preserves non-active enforcement and bypass actors", () => {

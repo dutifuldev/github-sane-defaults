@@ -32,6 +32,10 @@ export type RulesetRule = {
   type: "deletion" | "non_fast_forward" | "required_linear_history";
 };
 
+export type ExistingRulesetRule = {
+  type: string;
+};
+
 export type BypassActor = {
   actor_id: number | null;
   actor_type: string;

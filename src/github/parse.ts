@@ -1,5 +1,5 @@
 import type { GitHubRepo, GitHubRuleset, RulesetSummary } from "./types.js";
-import type { BypassActor, RepoSettings, RulesetRule } from "../policy/types.js";
+import type { BypassActor, ExistingRulesetRule, RepoSettings } from "../policy/types.js";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -104,12 +104,12 @@ export function parseRepo(value: unknown): GitHubRepo {
   };
 }
 
-export function parseRepos(value: unknown): GitHubRepo[] {
+export function parseRepoNames(value: unknown): string[] {
   if (!Array.isArray(value)) {
     throw new Error("repos response must be an array");
   }
 
-  return value.map(parseRepo);
+  return value.map((item) => asString(asRecord(item, "repo"), "name", "repo"));
 }
 
 export function parseRulesetSummaries(value: unknown): RulesetSummary[] {
@@ -129,7 +129,7 @@ export function parseRulesetSummaries(value: unknown): RulesetSummary[] {
   });
 }
 
-function parseRules(value: unknown): RulesetRule[] {
+function parseRules(value: unknown): ExistingRulesetRule[] {
   if (!Array.isArray(value)) {
     throw new Error("ruleset.rules must be an array");
   }
@@ -137,10 +137,6 @@ function parseRules(value: unknown): RulesetRule[] {
   return value.map((item) => {
     const record = asRecord(item, "ruleset.rules[]");
     const type = asString(record, "type", "ruleset.rules[]");
-
-    if (type !== "deletion" && type !== "non_fast_forward" && type !== "required_linear_history") {
-      throw new Error(`unsupported ruleset rule: ${type}`);
-    }
 
     return { type };
   });

@@ -2,7 +2,7 @@ import { execFileSync } from "node:child_process";
 
 import { DESIRED_REPO_SETTINGS } from "../policy/defaults.js";
 import type { RulesetPayload } from "../policy/types.js";
-import { parseRepo, parseRepos, parseRuleset, parseRulesetSummaries } from "./parse.js";
+import { parseRepo, parseRepoNames, parseRuleset, parseRulesetSummaries } from "./parse.js";
 import type { GitHubErrorContext, GitHubRepo, GitHubRuleset, RulesetSummary } from "./types.js";
 
 export class GitHubApiError extends Error {
@@ -47,10 +47,11 @@ export class RestGitHubClient implements GitHubClient {
 
     for (let page = 1; ; page += 1) {
       const path = `/orgs/${org}/repos?type=all&per_page=100&page=${String(page)}`;
-      const pageRepos = parseRepos(await this.request("GET", path));
+      const repoNames = parseRepoNames(await this.request("GET", path));
+      const pageRepos = await Promise.all(repoNames.map((repo) => this.getRepo(org, repo)));
       repos.push(...pageRepos);
 
-      if (pageRepos.length < 100) {
+      if (repoNames.length < 100) {
         return repos;
       }
     }
