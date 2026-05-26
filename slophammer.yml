@@ -1,0 +1,32 @@
+typescript:
+  coverage_threshold: 85
+  complexity_max: 8
+  dry:
+    max_findings: 0
+    paths:
+      - src
+    exclude:
+      - "tests/**"
+      - "dist/**"
+    copied_blocks:
+      enabled: true
+      min_tokens: 100
+  mutation_targets:
+    - src/app
+    - src/cli
+    - src/github/parse.ts
+    - src/policy
+  dependency_boundaries:
+    - from: src/cli
+      allow:
+        - src/app
+        - src/github
+    - from: src/app
+      allow:
+        - src/github
+        - src/policy
+    - from: src/github
+      allow:
+        - src/policy
+    - from: src/policy
+      allow: []
