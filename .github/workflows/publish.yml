@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Release tag to publish, for example v0.1.1"
+        required: true
+        type: string
 
 concurrency:
   group: release-${{ github.workflow }}-${{ github.ref }}
@@ -86,18 +92,17 @@ jobs:
 
       - name: Validate release tag
         env:
-          RELEASE_SHA: ${{ github.sha }}
-          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.ref_name }}
         run: |
           set -euo pipefail
           git fetch --no-tags origin main --depth=1
+          git fetch --force origin "refs/tags/$RELEASE_TAG:refs/tags/$RELEASE_TAG"
 
           node - <<'NODE'
           const { execFileSync } = require("node:child_process");
           const { readFileSync } = require("node:fs");
 
           const releaseTag = process.env.RELEASE_TAG ?? "";
-          const releaseSha = process.env.RELEASE_SHA ?? "";
           const semverTag = /^v\d+\.\d+\.\d+$/;
 
           if (!semverTag.test(releaseTag)) {
@@ -114,6 +119,10 @@ jobs:
             );
             process.exit(1);
           }
+
+          const releaseSha = execFileSync("git", ["rev-list", "-n", "1", releaseTag], {
+            encoding: "utf8"
+          }).trim();
 
           try {
             execFileSync("git", ["merge-base", "--is-ancestor", releaseSha, "origin/main"], {
