@@ -138,7 +138,7 @@ function applyPositionalTargets(flags: ParsedFlags): void {
 
 function applyOrgTarget(flags: ParsedFlags): void {
   if (flags.targets.length !== 1 || flags.targets[0]?.includes("/") === true) {
-    throw new Error("Use an organization name with --all, for example: dutifuldev --all.");
+    throw new Error("Use an organization name with --all, for example: example-org --all.");
   }
 
   setTargetOrg(flags, flags.targets[0]);
