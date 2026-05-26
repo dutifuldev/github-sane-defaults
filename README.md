@@ -28,6 +28,22 @@ Or run without installing:
 npx github-sane-defaults plan example-org/example-repo
 ```
 
+### Ask your coding agent (recommended)
+
+Copy this block into your coding agent to audit existing GitHub repositories.
+
+```text
+Use github-sane-defaults to inspect my existing GitHub repositories.
+
+Attention agent: start here:
+https://github.com/dutifuldev/github-sane-defaults#readme
+
+Ask me for the target org or owner/repo list, then run plan only. Show which
+repos need branch protection rulesets, deletion/force-push protection, linear
+history, or GitHub merge and cleanup settings enabled. Do not apply changes
+unless I ask.
+```
+
 ## Authentication
 
 The CLI reads tokens in this order:
