@@ -84,6 +84,50 @@ describe("parseRuleset", () => {
     ).toThrow("unsupported ruleset rule");
   });
 
+  it("preserves non-active enforcement and bypass actors", () => {
+    expect(
+      parseRuleset({
+        id: 1,
+        ...desiredRulesetPayload(),
+        enforcement: "evaluate",
+        bypass_actors: [{ actor_id: null, actor_type: "OrganizationAdmin", bypass_mode: "always" }]
+      })
+    ).toMatchObject({
+      enforcement: "evaluate",
+      bypass_actors: [{ actor_id: null, actor_type: "OrganizationAdmin", bypass_mode: "always" }]
+    });
+  });
+
+  it("rejects non-branch targets", () => {
+    expect(() =>
+      parseRuleset({
+        id: 1,
+        ...desiredRulesetPayload(),
+        target: "tag"
+      })
+    ).toThrow("ruleset.target must be branch");
+  });
+
+  it("rejects unsupported enforcement values", () => {
+    expect(() =>
+      parseRuleset({
+        id: 1,
+        ...desiredRulesetPayload(),
+        enforcement: "monitor"
+      })
+    ).toThrow("unsupported ruleset enforcement");
+  });
+
+  it("rejects malformed bypass actors", () => {
+    expect(() =>
+      parseRuleset({
+        id: 1,
+        ...desiredRulesetPayload(),
+        bypass_actors: [{ actor_id: "1", actor_type: "Team", bypass_mode: "always" }]
+      })
+    ).toThrow("actor_id");
+  });
+
   it("rejects malformed ref include values", () => {
     expect(() =>
       parseRuleset({

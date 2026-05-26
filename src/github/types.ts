@@ -1,4 +1,4 @@
-import type { RepoSettings, RulesetPayload, RulesetRule } from "../policy/types.js";
+import type { BypassActor, RepoSettings, RulesetConditions, RulesetRule } from "../policy/types.js";
 
 export type GitHubRepo = RepoSettings & {
   name: string;
@@ -15,8 +15,13 @@ export type RulesetSummary = {
   enforcement: string;
 };
 
-export type GitHubRuleset = RulesetPayload & {
+export type GitHubRuleset = {
   id: number;
+  name: string;
+  target: "branch";
+  enforcement: "active" | "evaluate" | "disabled";
+  bypass_actors: BypassActor[];
+  conditions: RulesetConditions;
   rules: RulesetRule[];
 };
 

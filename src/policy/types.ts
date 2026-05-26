@@ -32,11 +32,17 @@ export type RulesetRule = {
   type: "deletion" | "non_fast_forward" | "required_linear_history";
 };
 
+export type BypassActor = {
+  actor_id: number | null;
+  actor_type: string;
+  bypass_mode: string;
+};
+
 export type RulesetPayload = {
   name: string;
   target: "branch";
   enforcement: "active";
-  bypass_actors: [];
+  bypass_actors: BypassActor[];
   conditions: RulesetConditions;
   rules: RulesetRule[];
 };

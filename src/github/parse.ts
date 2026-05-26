@@ -1,5 +1,5 @@
 import type { GitHubRepo, GitHubRuleset, RulesetSummary } from "./types.js";
-import type { RepoSettings, RulesetRule } from "../policy/types.js";
+import type { BypassActor, RepoSettings, RulesetRule } from "../policy/types.js";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -26,6 +26,20 @@ function asNumber(record: JsonRecord, key: string, label: string): number {
 
   if (typeof value !== "number") {
     throw new Error(`${label}.${key} must be a number`);
+  }
+
+  return value;
+}
+
+function asNullableNumber(record: JsonRecord, key: string, label: string): number | null {
+  const value = record[key];
+
+  if (value === null) {
+    return null;
+  }
+
+  if (typeof value !== "number") {
+    throw new Error(`${label}.${key} must be a number or null`);
   }
 
   return value;
@@ -132,6 +146,42 @@ function parseRules(value: unknown): RulesetRule[] {
   });
 }
 
+function parseBypassActors(value: unknown): BypassActor[] {
+  if (!Array.isArray(value)) {
+    throw new Error("ruleset.bypass_actors must be an array");
+  }
+
+  return value.map((item) => {
+    const record = asRecord(item, "ruleset.bypass_actors[]");
+
+    return {
+      actor_id: asNullableNumber(record, "actor_id", "ruleset.bypass_actors[]"),
+      actor_type: asString(record, "actor_type", "ruleset.bypass_actors[]"),
+      bypass_mode: asString(record, "bypass_mode", "ruleset.bypass_actors[]")
+    };
+  });
+}
+
+function parseTarget(record: JsonRecord): "branch" {
+  const target = asString(record, "target", "ruleset");
+
+  if (target !== "branch") {
+    throw new Error(`ruleset.target must be branch, got ${target}`);
+  }
+
+  return target;
+}
+
+function parseEnforcement(record: JsonRecord): "active" | "evaluate" | "disabled" {
+  const enforcement = asString(record, "enforcement", "ruleset");
+
+  if (enforcement !== "active" && enforcement !== "evaluate" && enforcement !== "disabled") {
+    throw new Error(`unsupported ruleset enforcement: ${enforcement}`);
+  }
+
+  return enforcement;
+}
+
 export function parseRuleset(value: unknown): GitHubRuleset {
   const record = asRecord(value, "ruleset");
   const conditions = asRecord(record["conditions"], "ruleset.conditions");
@@ -140,9 +190,9 @@ export function parseRuleset(value: unknown): GitHubRuleset {
   return {
     id: asNumber(record, "id", "ruleset"),
     name: asString(record, "name", "ruleset"),
-    target: "branch",
-    enforcement: "active",
-    bypass_actors: [],
+    target: parseTarget(record),
+    enforcement: parseEnforcement(record),
+    bypass_actors: parseBypassActors(record["bypass_actors"]),
     conditions: {
       ref_name: {
         include: asStringArray(refName["include"], "ruleset.conditions.ref_name.include"),
