@@ -5,13 +5,13 @@ Apply repeatable GitHub repository defaults and branch rulesets.
 ## Install
 
 ```sh
-npm install -g @dutifuldev/github-sane-defaults
+npm install -g github-sane-defaults
 ```
 
 Or run without installing:
 
 ```sh
-npx @dutifuldev/github-sane-defaults plan dutifuldev/scratch
+npx github-sane-defaults plan dutifuldev/scratch
 ```
 
 ## Authentication
