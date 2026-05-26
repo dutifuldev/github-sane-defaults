@@ -36,6 +36,7 @@ describe("applyDefaults", () => {
     const currentRuleset: GitHubRuleset = {
       id: 123,
       ...desiredRulesetPayload(),
+      conditions: { ref_name: { include: ["~ALL"], exclude: [] } },
       rules: [
         { type: "deletion" },
         { type: "pull_request", parameters: { required_approving_review_count: 1 } }
@@ -65,6 +66,9 @@ describe("applyDefaults", () => {
       { type: "non_fast_forward" },
       { type: "required_linear_history" }
     ]);
+    expect(updatedPayloads[0]?.conditions).toEqual({
+      ref_name: { include: ["~ALL"], exclude: [] }
+    });
   });
 
   it("creates the ruleset if it disappears between plan and apply", async () => {

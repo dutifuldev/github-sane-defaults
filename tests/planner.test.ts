@@ -32,6 +32,17 @@ describe("buildPlan", () => {
     ]);
   });
 
+  it("plans managed ruleset creation when only differently named rulesets exist", async () => {
+    const client = fakeClient({
+      repo: baseRepo(),
+      rulesets: [{ id: 99, name: "strict branch policy", target: "branch", enforcement: "active" }]
+    });
+
+    await expect(
+      buildPlan(client, { org: "dutifuldev", repos: ["scratch"], all: false })
+    ).resolves.toMatchObject([{ ruleset: { action: "create" } }]);
+  });
+
   it("plans no ruleset change when payload already matches", () => {
     const desired = desiredRulesetPayload();
     const existing: GitHubRuleset = { id: 1, ...desired };
@@ -48,6 +59,17 @@ describe("buildPlan", () => {
         ...desired.rules,
         { type: "pull_request", parameters: { required_approving_review_count: 1 } }
       ]
+    };
+
+    expect(rulesetSatisfiesDesired(existing, desired)).toBe(true);
+  });
+
+  it("plans no ruleset change when an existing ruleset protects more refs", () => {
+    const desired = desiredRulesetPayload();
+    const existing: GitHubRuleset = {
+      id: 1,
+      ...desired,
+      conditions: { ref_name: { include: ["~ALL"], exclude: [] } }
     };
 
     expect(rulesetSatisfiesDesired(existing, desired)).toBe(true);
