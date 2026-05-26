@@ -99,9 +99,15 @@ describe("parseRuleset", () => {
       parseRuleset({
         id: 1,
         ...desiredRulesetPayload(),
-        rules: [...desiredRulesetPayload().rules, { type: "pull_request" }]
+        rules: [
+          ...desiredRulesetPayload().rules,
+          { type: "pull_request", parameters: { required_approving_review_count: 1 } }
+        ]
       }).rules
-    ).toContainEqual({ type: "pull_request" });
+    ).toContainEqual({
+      type: "pull_request",
+      parameters: { required_approving_review_count: 1 }
+    });
   });
 
   it("preserves non-active enforcement and bypass actors", () => {

@@ -34,7 +34,7 @@ export type RulesetRule = {
 
 export type ExistingRulesetRule = {
   type: string;
-};
+} & Record<string, unknown>;
 
 export type BypassActor = {
   actor_id: number | null;
@@ -48,5 +48,5 @@ export type RulesetPayload = {
   enforcement: "active";
   bypass_actors: BypassActor[];
   conditions: RulesetConditions;
-  rules: RulesetRule[];
+  rules: ExistingRulesetRule[];
 };

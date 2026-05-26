@@ -32,13 +32,18 @@ describe("applyDefaults", () => {
 
   it("updates an existing changed ruleset without touching matching settings", async () => {
     const calls: string[] = [];
+    const updatedPayloads: RulesetPayload[] = [];
     const currentRuleset: GitHubRuleset = {
       id: 123,
       ...desiredRulesetPayload(),
-      rules: [{ type: "deletion" }]
+      rules: [
+        { type: "deletion" },
+        { type: "pull_request", parameters: { required_approving_review_count: 1 } }
+      ]
     };
     const client = fakeClient({
       calls,
+      updatedPayloads,
       repo: baseRepo(),
       rulesets: [{ id: 123, name: RULESET_NAME, target: "branch", enforcement: "active" }],
       ruleset: currentRuleset
@@ -50,7 +55,15 @@ describe("applyDefaults", () => {
       "listRepoRulesets:scratch",
       "getRepoRuleset:123",
       "listRepoRulesets:scratch",
+      "getRepoRuleset:123",
       "updateRepoRuleset:123"
+    ]);
+    expect(updatedPayloads).toHaveLength(1);
+    expect(updatedPayloads[0]?.rules).toEqual([
+      { type: "deletion" },
+      { type: "pull_request", parameters: { required_approving_review_count: 1 } },
+      { type: "non_fast_forward" },
+      { type: "required_linear_history" }
     ]);
   });
 
@@ -85,6 +98,7 @@ type FakeClientOptions = {
   rulesets: RulesetSummary[];
   rulesetsAfterPlan?: RulesetSummary[];
   ruleset?: GitHubRuleset;
+  updatedPayloads?: RulesetPayload[];
 };
 
 function fakeClient(options: FakeClientOptions): GitHubClient {
@@ -119,6 +133,7 @@ function fakeClient(options: FakeClientOptions): GitHubClient {
     },
     updateRepoRuleset: (_owner: string, _repo: string, id: number, payload: RulesetPayload) => {
       expect(payload.name).toBe(RULESET_NAME);
+      options.updatedPayloads?.push(payload);
       options.calls.push(`updateRepoRuleset:${String(id)}`);
       return Promise.resolve();
     }

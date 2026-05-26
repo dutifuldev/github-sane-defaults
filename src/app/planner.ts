@@ -2,7 +2,7 @@ import type { GitHubClient } from "../github/client.js";
 import type { GitHubRuleset } from "../github/types.js";
 import type { GitHubRepo } from "../github/types.js";
 import { desiredRulesetPayload, repoSettingChanges, RULESET_NAME } from "../policy/defaults.js";
-import type { RulesetPayload } from "../policy/types.js";
+import type { ExistingRulesetRule, RefNameCondition, RulesetPayload } from "../policy/types.js";
 import type { RepoPlan, RulesetPlan, TargetSelection } from "./types.js";
 
 export async function buildPlan(
@@ -62,24 +62,78 @@ async function planRuleset(
 
   const existing = await client.getRepoRuleset(owner, repo, existingSummary.id);
 
-  if (rulesetEquivalent(existing, desired)) {
+  if (rulesetSatisfiesDesired(existing, desired)) {
     return { action: "none" };
   }
 
   return { action: "update" };
 }
 
-export function rulesetEquivalent(existing: GitHubRuleset, desired: RulesetPayload): boolean {
-  return canonicalRuleset(existing) === canonicalRuleset(desired);
+export function rulesetSatisfiesDesired(existing: GitHubRuleset, desired: RulesetPayload): boolean {
+  return (
+    existing.name === desired.name &&
+    existing.enforcement === desired.enforcement &&
+    canonicalRulesetRules(existing.rules) ===
+      canonicalRulesetRules(mergeRules(existing.rules, desired.rules)) &&
+    JSON.stringify(existing.bypass_actors) === JSON.stringify(desired.bypass_actors) &&
+    refConditionIncludes(existing.conditions.ref_name, desired.conditions.ref_name)
+  );
 }
 
-function canonicalRuleset(ruleset: GitHubRuleset | RulesetPayload): string {
-  return JSON.stringify({
-    name: ruleset.name,
-    target: ruleset.target,
-    enforcement: ruleset.enforcement,
-    bypass_actors: ruleset.bypass_actors,
-    conditions: ruleset.conditions,
-    rules: ruleset.rules
-  });
+export function mergeRulesetPayload(
+  existing: GitHubRuleset,
+  desired: RulesetPayload
+): RulesetPayload {
+  return {
+    ...desired,
+    bypass_actors: desired.bypass_actors,
+    conditions: {
+      ref_name: mergeRefCondition(existing.conditions.ref_name, desired.conditions.ref_name)
+    },
+    rules: mergeRules(existing.rules, desired.rules)
+  };
+}
+
+function mergeRules(
+  existing: ExistingRulesetRule[],
+  desired: ExistingRulesetRule[]
+): ExistingRulesetRule[] {
+  const rules = [...existing];
+  const existingTypes = new Set(existing.map((rule) => rule.type));
+
+  for (const rule of desired) {
+    if (!existingTypes.has(rule.type)) {
+      rules.push(rule);
+    }
+  }
+
+  return rules;
+}
+
+function refConditionIncludes(existing: RefNameCondition, desired: RefNameCondition): boolean {
+  return (
+    desired.include.every((ref) => refIncluded(existing.include, ref)) &&
+    desired.include.every((ref) => !existing.exclude.includes(ref))
+  );
+}
+
+function mergeRefCondition(
+  existing: RefNameCondition,
+  desired: RefNameCondition
+): RefNameCondition {
+  const include = desired.include.reduce(
+    (refs, ref) => (refIncluded(refs, ref) ? refs : [...refs, ref]),
+    [...existing.include]
+  );
+  const exclude = existing.exclude.filter((ref) => !desired.include.includes(ref));
+
+  return { include, exclude };
+}
+
+function refIncluded(include: string[], ref: string): boolean {
+  return include.includes("~ALL") || include.includes(ref);
+}
+
+function canonicalRulesetRules(rules: ExistingRulesetRule[]): string {
+  return JSON.stringify(rules);
 }

@@ -84,6 +84,10 @@ Default branch ruleset:
 The ruleset is named `github-sane-defaults: default branch` and targets the
 repository default branch.
 
+If that managed ruleset already has additional rules, `apply` preserves them
+and only adds missing default protections. Rulesets with other names are left
+untouched.
+
 ## Development
 
 ```sh

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildPlan, rulesetEquivalent } from "../src/app/planner.js";
+import { buildPlan, rulesetSatisfiesDesired } from "../src/app/planner.js";
 import type { GitHubClient } from "../src/github/client.js";
 import type { GitHubRepo, GitHubRuleset, RulesetSummary } from "../src/github/types.js";
 import { DESIRED_REPO_SETTINGS, desiredRulesetPayload } from "../src/policy/defaults.js";
@@ -36,7 +36,21 @@ describe("buildPlan", () => {
     const desired = desiredRulesetPayload();
     const existing: GitHubRuleset = { id: 1, ...desired };
 
-    expect(rulesetEquivalent(existing, desired)).toBe(true);
+    expect(rulesetSatisfiesDesired(existing, desired)).toBe(true);
+  });
+
+  it("plans no ruleset change when an existing ruleset has extra rules", () => {
+    const desired = desiredRulesetPayload();
+    const existing: GitHubRuleset = {
+      id: 1,
+      ...desired,
+      rules: [
+        ...desired.rules,
+        { type: "pull_request", parameters: { required_approving_review_count: 1 } }
+      ]
+    };
+
+    expect(rulesetSatisfiesDesired(existing, desired)).toBe(true);
   });
 });
 

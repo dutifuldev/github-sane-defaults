@@ -2,6 +2,7 @@ import type { GitHubClient } from "../github/client.js";
 import { desiredRulesetPayload, RULESET_NAME } from "../policy/defaults.js";
 import type { ApplySummary, RepoPlan, TargetSelection } from "./types.js";
 import { buildPlan } from "./planner.js";
+import { mergeRulesetPayload } from "./planner.js";
 
 export async function applyDefaults(
   client: GitHubClient,
@@ -43,5 +44,11 @@ async function applyRepoPlan(client: GitHubClient, owner: string, plan: RepoPlan
     return;
   }
 
-  await client.updateRepoRuleset(owner, plan.name, existing.id, desired);
+  const existingRuleset = await client.getRepoRuleset(owner, plan.name, existing.id);
+  await client.updateRepoRuleset(
+    owner,
+    plan.name,
+    existing.id,
+    mergeRulesetPayload(existingRuleset, desired)
+  );
 }

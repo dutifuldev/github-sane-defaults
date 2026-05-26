@@ -138,7 +138,7 @@ function parseRules(value: unknown): ExistingRulesetRule[] {
     const record = asRecord(item, "ruleset.rules[]");
     const type = asString(record, "type", "ruleset.rules[]");
 
-    return { type };
+    return { ...record, type };
   });
 }
 
