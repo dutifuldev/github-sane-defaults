@@ -62,9 +62,17 @@ export class RestGitHubClient implements GitHubClient {
   }
 
   public async listRepoRulesets(owner: string, repo: string): Promise<RulesetSummary[]> {
-    return parseRulesetSummaries(
-      await this.request("GET", `/repos/${owner}/${repo}/rulesets?includes_parents=false`)
-    );
+    const rulesets: RulesetSummary[] = [];
+
+    for (let page = 1; ; page += 1) {
+      const path = `/repos/${owner}/${repo}/rulesets?includes_parents=false&per_page=100&page=${String(page)}`;
+      const pageRulesets = parseRulesetSummaries(await this.request("GET", path));
+      rulesets.push(...pageRulesets);
+
+      if (pageRulesets.length < 100) {
+        return rulesets;
+      }
+    }
   }
 
   public async getRepoRuleset(owner: string, repo: string, id: number): Promise<GitHubRuleset> {
