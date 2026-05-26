@@ -11,8 +11,13 @@ export async function buildPlan(
 ): Promise<RepoPlan[]> {
   const repos = await selectRepos(client, selection);
   const activeRepos = repos.filter((repo) => !repo.archived && !repo.disabled);
+  const plans: RepoPlan[] = [];
 
-  return Promise.all(activeRepos.map((repo) => buildRepoPlan(client, selection.org, repo)));
+  for (const repo of activeRepos) {
+    plans.push(await buildRepoPlan(client, selection.org, repo));
+  }
+
+  return plans;
 }
 
 async function selectRepos(
