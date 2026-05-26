@@ -72,8 +72,8 @@ Repository settings:
 - auto-merge enabled
 - update branch button enabled
 - delete branch on merge enabled
-- squash commit title set to the pull request title
-- squash commit message set to the pull request body
+- squash commit title set to GitHub's commit-or-pull-request-title default
+- squash commit message set to GitHub's commit-messages default
 
 Default branch ruleset:
 
