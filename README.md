@@ -2,6 +2,20 @@
 
 Apply repeatable GitHub repository defaults and branch rulesets.
 
+`github-sane-defaults` is a small CLI for keeping repository settings
+consistent across one GitHub repository or an entire organization. It previews
+the changes it would make, then applies the same policy through GitHub's REST
+API when you are ready.
+
+The default policy is intentionally narrow. It turns on the GitHub merge and
+cleanup settings that keep pull request history tidy, and it creates a default
+branch ruleset that blocks deletion, blocks force pushes, and requires linear
+history. The CLI manages its own named ruleset, so repeated runs are
+idempotent and easy to review.
+
+Use `plan` first to see drift, then switch to `apply` to make the changes.
+Both commands accept `owner/repo` targets and organization-wide `--all` runs.
+
 ## Install
 
 ```sh
