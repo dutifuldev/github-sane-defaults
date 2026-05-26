@@ -1,6 +1,6 @@
 {
   "name": "github-sane-defaults",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Apply sane GitHub repository defaults and branch rulesets.",
   "license": "MIT",
   "type": "module",
