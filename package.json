@@ -1,5 +1,5 @@
 {
-  "name": "@dutifuldev/github-sane-defaults",
+  "name": "github-sane-defaults",
   "version": "0.1.0",
   "description": "Apply sane GitHub repository defaults and branch rulesets.",
   "license": "MIT",

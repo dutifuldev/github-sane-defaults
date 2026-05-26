@@ -5,13 +5,13 @@ Apply repeatable GitHub repository defaults and branch rulesets.
 ## Install
 
 ```sh
-npm install -g @dutifuldev/github-sane-defaults
+npm install -g github-sane-defaults
 ```
 
 Or run without installing:
 
 ```sh
-npx @dutifuldev/github-sane-defaults plan --org dutifuldev --repo scratch
+npx github-sane-defaults plan dutifuldev/scratch
 ```
 
 ## Authentication
@@ -31,20 +31,22 @@ repositories.
 Preview changes for one repository:
 
 ```sh
-github-sane-defaults plan --org dutifuldev --repo scratch
+github-sane-defaults plan dutifuldev/scratch
 ```
 
 Apply changes to one repository:
 
 ```sh
-github-sane-defaults apply --org dutifuldev --repo scratch
+github-sane-defaults apply dutifuldev/scratch
 ```
 
 Apply changes to every non-archived repository in an organization:
 
 ```sh
-github-sane-defaults apply --org dutifuldev --all
+github-sane-defaults apply dutifuldev --all
 ```
+
+The legacy `--org dutifuldev --repo scratch` form is still accepted.
 
 ## Defaults
 

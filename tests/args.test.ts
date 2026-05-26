@@ -3,7 +3,16 @@ import { describe, expect, it } from "vitest";
 import { parseArgs } from "../src/cli/args.js";
 
 describe("parseArgs", () => {
-  it("parses a targeted plan command", () => {
+  it("parses a positional repository plan command", () => {
+    expect(parseArgs(["plan", "dutifuldev/scratch"])).toEqual({
+      command: "plan",
+      org: "dutifuldev",
+      repos: ["scratch"],
+      all: false
+    });
+  });
+
+  it("parses a legacy targeted plan command", () => {
     expect(parseArgs(["plan", "--org", "dutifuldev", "--repo", "scratch"])).toEqual({
       command: "plan",
       org: "dutifuldev",
@@ -13,7 +22,7 @@ describe("parseArgs", () => {
   });
 
   it("parses an org-wide apply command", () => {
-    expect(parseArgs(["apply", "--org", "dutifuldev", "--all"])).toEqual({
+    expect(parseArgs(["apply", "dutifuldev", "--all"])).toEqual({
       command: "apply",
       org: "dutifuldev",
       repos: [],
@@ -33,6 +42,18 @@ describe("parseArgs", () => {
     );
   });
 
+  it("rejects malformed positional repository targets", () => {
+    expect(() => parseArgs(["plan", "scratch"])).toThrow(
+      "Repository targets must look like <org>/<repo>"
+    );
+  });
+
+  it("rejects conflicting organization targets", () => {
+    expect(() => parseArgs(["plan", "--org", "other", "dutifuldev/scratch"])).toThrow(
+      "Conflicting organization targets"
+    );
+  });
+
   it("rejects missing option values", () => {
     expect(() => parseArgs(["plan", "--org"])).toThrow("--org requires a value.");
   });
@@ -44,14 +65,12 @@ describe("parseArgs", () => {
   });
 
   it("parses an explicit token", () => {
-    expect(parseArgs(["plan", "--org", "dutifuldev", "--repo", "scratch", "--token", "t"])).toEqual(
-      {
-        command: "plan",
-        org: "dutifuldev",
-        repos: ["scratch"],
-        all: false,
-        token: "t"
-      }
-    );
+    expect(parseArgs(["plan", "dutifuldev/scratch", "--token", "t"])).toEqual({
+      command: "plan",
+      org: "dutifuldev",
+      repos: ["scratch"],
+      all: false,
+      token: "t"
+    });
   });
 });
