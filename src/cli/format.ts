@@ -23,7 +23,7 @@ export function formatPlan(plans: RepoPlan[], options: FormatOptions = {}): stri
   }
 
   const style = createStyle(options.color === true);
-  const changed = plans.filter(hasChanges).length;
+  const changed = countChangedRepos(plans);
 
   return [
     style.title(`Plan: ${formatCount(plans.length, "repository")}`),
@@ -46,7 +46,7 @@ export function formatApplySummary(summary: ApplySummary, options: FormatOptions
 }
 
 function formatRepoPlan(plan: RepoPlan, style: Style): string[] {
-  const status = hasChanges(plan) ? style.warn("changes") : style.success("clean");
+  const status = repoPlanHasChanges(plan) ? style.warn("changes") : style.success("clean");
   const lines = [`${status} ${style.repo(plan.fullName)}`];
 
   if (plan.settingChanges.length === 0) {
@@ -90,7 +90,15 @@ function formatRulesetActionOnly(action: RepoPlan["ruleset"]["action"], style: S
   return style.warn("update");
 }
 
-function hasChanges(plan: RepoPlan): boolean {
+export function planHasChanges(plans: RepoPlan[]): boolean {
+  return countChangedRepos(plans) > 0;
+}
+
+export function countChangedRepos(plans: RepoPlan[]): number {
+  return plans.filter(repoPlanHasChanges).length;
+}
+
+function repoPlanHasChanges(plan: RepoPlan): boolean {
   return plan.settingChanges.length > 0 || plan.ruleset.action !== "none";
 }
 

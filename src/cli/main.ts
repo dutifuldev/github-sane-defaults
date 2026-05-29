@@ -4,7 +4,13 @@ import { buildPlan } from "../app/planner.js";
 import type { ApplySummary } from "../app/types.js";
 import { RestGitHubClient, resolveToken } from "../github/client.js";
 import { confirmApply } from "./confirm.js";
-import { formatApplySummary, formatPlan, shouldUseColor } from "./format.js";
+import {
+  countChangedRepos,
+  formatApplySummary,
+  formatPlan,
+  planHasChanges,
+  shouldUseColor
+} from "./format.js";
 import { parseArgs } from "./args.js";
 
 async function main(): Promise<void> {
@@ -21,6 +27,11 @@ async function main(): Promise<void> {
 
   console.log(formatPlan(planned, formatOptions));
 
+  if (!planHasChanges(planned)) {
+    console.error("No changes to apply.");
+    return;
+  }
+
   if (!options.yes && !(await confirmApply())) {
     console.error("Apply cancelled.");
     process.exitCode = 1;
@@ -29,7 +40,7 @@ async function main(): Promise<void> {
 
   await applyPlannedDefaults(client, options.org, planned);
 
-  const summary: ApplySummary = { planned, applied: planned.length };
+  const summary: ApplySummary = { planned, applied: countChangedRepos(planned) };
   console.log("");
   console.log(formatApplySummary(summary, formatOptions));
 }

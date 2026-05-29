@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { formatApplySummary, formatPlan } from "../src/cli/format.js";
+import {
+  countChangedRepos,
+  formatApplySummary,
+  formatPlan,
+  planHasChanges
+} from "../src/cli/format.js";
 
 describe("formatPlan", () => {
   it("formats an empty plan", () => {
@@ -100,5 +105,28 @@ describe("formatApplySummary", () => {
     expect(formatApplySummary({ planned: [], applied: 0 })).toBe(
       "Applied sane defaults to 0 repositories.\n\nNo repositories selected."
     );
+  });
+});
+
+describe("planHasChanges", () => {
+  it("detects clean and changed plans", () => {
+    const cleanPlan = {
+      name: "clean",
+      fullName: "dutifuldev/clean",
+      archived: false,
+      settingChanges: [],
+      ruleset: { action: "none" as const }
+    };
+    const changedPlan = {
+      name: "changed",
+      fullName: "dutifuldev/changed",
+      archived: false,
+      settingChanges: [{ key: "allow_auto_merge" as const, current: false, desired: true }],
+      ruleset: { action: "none" as const }
+    };
+
+    expect(planHasChanges([cleanPlan])).toBe(false);
+    expect(planHasChanges([cleanPlan, changedPlan])).toBe(true);
+    expect(countChangedRepos([cleanPlan, changedPlan])).toBe(1);
   });
 });
