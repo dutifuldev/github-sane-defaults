@@ -64,6 +64,12 @@ Preview changes for one repository:
 github-sane-defaults plan example-org/example-repo
 ```
 
+Preview changes for every non-archived repository in an organization:
+
+```sh
+github-sane-defaults plan example-org --all
+```
+
 Apply changes to one repository:
 
 ```sh
@@ -74,6 +80,13 @@ Apply changes to every non-archived repository in an organization:
 
 ```sh
 github-sane-defaults apply example-org --all
+```
+
+`apply` prints the plan and asks for confirmation before changing repository
+settings or rulesets. Use `-y` or `--yes` to skip the prompt in automation:
+
+```sh
+github-sane-defaults apply example-org/example-repo --yes
 ```
 
 The legacy `--org example-org --repo example-repo` form is still accepted.

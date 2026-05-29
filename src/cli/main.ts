@@ -1,7 +1,9 @@
 #!/usr/bin/env node
-import { applyDefaults } from "../app/apply.js";
+import { applyPlannedDefaults } from "../app/apply.js";
 import { buildPlan } from "../app/planner.js";
+import type { ApplySummary } from "../app/types.js";
 import { RestGitHubClient, resolveToken } from "../github/client.js";
+import { confirmApply } from "./confirm.js";
 import { formatApplySummary, formatPlan, shouldUseColor } from "./format.js";
 import { parseArgs } from "./args.js";
 
@@ -15,7 +17,21 @@ async function main(): Promise<void> {
     return;
   }
 
-  console.log(formatApplySummary(await applyDefaults(client, options), formatOptions));
+  const planned = await buildPlan(client, options);
+
+  console.log(formatPlan(planned, formatOptions));
+
+  if (!options.yes && !(await confirmApply())) {
+    console.error("Apply cancelled.");
+    process.exitCode = 1;
+    return;
+  }
+
+  await applyPlannedDefaults(client, options.org, planned);
+
+  const summary: ApplySummary = { planned, applied: planned.length };
+  console.log("");
+  console.log(formatApplySummary(summary, formatOptions));
 }
 
 main().catch((error: unknown) => {

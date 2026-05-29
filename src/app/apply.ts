@@ -10,14 +10,22 @@ export async function applyDefaults(
 ): Promise<ApplySummary> {
   const planned = await buildPlan(client, selection);
 
-  for (const plan of planned) {
-    await applyRepoPlan(client, selection.org, plan);
-  }
+  await applyPlannedDefaults(client, selection.org, planned);
 
   return {
     planned,
     applied: planned.length
   };
+}
+
+export async function applyPlannedDefaults(
+  client: GitHubClient,
+  owner: string,
+  planned: RepoPlan[]
+): Promise<void> {
+  for (const plan of planned) {
+    await applyRepoPlan(client, owner, plan);
+  }
 }
 
 async function applyRepoPlan(client: GitHubClient, owner: string, plan: RepoPlan): Promise<void> {

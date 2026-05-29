@@ -90,7 +90,7 @@ jobs:
           RELEASE_TAG: ${{ github.ref_name }}
         run: |
           set -euo pipefail
-          git fetch --no-tags origin main --depth=1
+          git fetch --no-tags origin main
           git fetch --force origin "refs/tags/$RELEASE_TAG:refs/tags/$RELEASE_TAG"
 
           node - <<'NODE'

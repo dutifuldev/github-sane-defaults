@@ -8,7 +8,8 @@ describe("parseArgs", () => {
       command: "plan",
       org: "dutifuldev",
       repos: ["scratch"],
-      all: false
+      all: false,
+      yes: false
     });
   });
 
@@ -17,7 +18,8 @@ describe("parseArgs", () => {
       command: "plan",
       org: "dutifuldev",
       repos: ["scratch"],
-      all: false
+      all: false,
+      yes: false
     });
   });
 
@@ -26,8 +28,20 @@ describe("parseArgs", () => {
       command: "apply",
       org: "dutifuldev",
       repos: [],
-      all: true
+      all: true,
+      yes: false
     });
+  });
+
+  it("parses apply confirmation bypass flags", () => {
+    expect(parseArgs(["apply", "dutifuldev/scratch", "--yes"])).toMatchObject({
+      command: "apply",
+      org: "dutifuldev",
+      repos: ["scratch"],
+      all: false,
+      yes: true
+    });
+    expect(parseArgs(["apply", "dutifuldev/scratch", "-y"])).toMatchObject({ yes: true });
   });
 
   it("rejects commands without target repositories", () => {
@@ -70,6 +84,7 @@ describe("parseArgs", () => {
       org: "dutifuldev",
       repos: ["scratch"],
       all: false,
+      yes: false,
       token: "t"
     });
   });

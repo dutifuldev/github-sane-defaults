@@ -5,6 +5,7 @@ export type CliCommand = "plan" | "apply";
 export type CliOptions = TargetSelection & {
   command: CliCommand;
   token?: string;
+  yes: boolean;
 };
 
 export function parseArgs(args: string[]): CliOptions {
@@ -22,7 +23,8 @@ export function parseArgs(args: string[]): CliOptions {
     command,
     org: parsed.org,
     repos: parsed.repos,
-    all: parsed.all
+    all: parsed.all,
+    yes: parsed.yes
   };
 
   if (parsed.token !== undefined) {
@@ -54,10 +56,11 @@ type ParsedFlags = {
   repos: string[];
   targets: string[];
   all: boolean;
+  yes: boolean;
 };
 
 function parseFlags(args: string[]): ParsedFlags {
-  const flags: ParsedFlags = { repos: [], targets: [], all: false };
+  const flags: ParsedFlags = { repos: [], targets: [], all: false, yes: false };
 
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index];
@@ -79,13 +82,18 @@ function parseFlag(args: string[], index: number, flags: ParsedFlags): number {
     throw new Error("Unexpected missing argument.");
   }
 
-  if (!arg.startsWith("--")) {
-    flags.targets.push(arg);
+  if (arg === "--all") {
+    flags.all = true;
     return index;
   }
 
-  if (arg === "--all") {
-    flags.all = true;
+  if (arg === "--yes" || arg === "-y") {
+    flags.yes = true;
+    return index;
+  }
+
+  if (!arg.startsWith("--")) {
+    flags.targets.push(arg);
     return index;
   }
 
@@ -181,6 +189,9 @@ export function usage(): string {
     "  github-sane-defaults plan <org> --all",
     "  github-sane-defaults apply <org> --all",
     "  github-sane-defaults plan --org <org> --repo <repo>",
-    "  github-sane-defaults apply --org <org> --repo <repo>"
+    "  github-sane-defaults apply --org <org> --repo <repo>",
+    "",
+    "Options:",
+    "  -y, --yes  Skip apply confirmation"
   ].join("\n");
 }
