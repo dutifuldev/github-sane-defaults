@@ -61,7 +61,7 @@ function formatRepoPlan(plan: RepoPlan, style: Style): string[] {
     );
   }
 
-  lines.push(`  Ruleset   ${formatRulesetAction(plan.ruleset.action, style)}`);
+  lines.push(`  Ruleset   ${formatRulesetPlan(plan.ruleset, style)}`);
 
   return lines;
 }
@@ -70,7 +70,15 @@ function formatValue(value: boolean | string | null): string {
   return value === null ? "unset" : String(value);
 }
 
-function formatRulesetAction(action: RepoPlan["ruleset"]["action"], style: Style): string {
+function formatRulesetPlan(ruleset: RepoPlan["ruleset"], style: Style): string {
+  if (ruleset.coveredBy !== undefined) {
+    return `${style.success("no changes")} (covered by ${ruleset.coveredBy})`;
+  }
+
+  return formatRulesetActionOnly(ruleset.action, style);
+}
+
+function formatRulesetActionOnly(action: RepoPlan["ruleset"]["action"], style: Style): string {
   if (action === "none") {
     return style.success("no changes");
   }

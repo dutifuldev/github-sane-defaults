@@ -54,6 +54,29 @@ describe("formatPlan", () => {
     );
   });
 
+  it("formats rulesets covered by existing policy", () => {
+    expect(
+      formatPlan([
+        {
+          name: "scratch",
+          fullName: "dutifuldev/scratch",
+          archived: false,
+          settingChanges: [],
+          ruleset: { action: "none", coveredBy: "Protect main" }
+        }
+      ])
+    ).toBe(
+      [
+        "Plan: 1 repository",
+        "0 with changes, 1 already clean",
+        "",
+        "clean dutifuldev/scratch",
+        "  Settings  no changes",
+        "  Ruleset   no changes (covered by Protect main)"
+      ].join("\n")
+    );
+  });
+
   it("formats colored output when requested", () => {
     expect(
       formatPlan(

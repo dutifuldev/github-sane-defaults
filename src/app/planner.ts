@@ -1,5 +1,5 @@
 import type { GitHubClient } from "../github/client.js";
-import type { GitHubRuleset } from "../github/types.js";
+import type { GitHubRuleset, RulesetSummary } from "../github/types.js";
 import type { GitHubRepo } from "../github/types.js";
 import { desiredRulesetPayload, repoSettingChanges, RULESET_NAME } from "../policy/defaults.js";
 import type { ExistingRulesetRule, RefNameCondition, RulesetPayload } from "../policy/types.js";
@@ -56,22 +56,53 @@ async function planRuleset(
   const summaries = await client.listRepoRulesets(owner, repo);
   const existingSummary = summaries.find((ruleset) => ruleset.name === RULESET_NAME);
 
-  if (existingSummary === undefined) {
-    return { action: "create" };
+  if (existingSummary !== undefined) {
+    const existing = await client.getRepoRuleset(owner, repo, existingSummary.id);
+
+    if (managedRulesetSatisfiesDesired(existing, desired)) {
+      return { action: "none" };
+    }
+
+    return { action: "update" };
   }
 
-  const existing = await client.getRepoRuleset(owner, repo, existingSummary.id);
+  const coveringRuleset = await findCoveringRuleset(client, owner, repo, summaries, desired);
 
-  if (rulesetSatisfiesDesired(existing, desired)) {
-    return { action: "none" };
+  if (coveringRuleset !== undefined) {
+    return { action: "none", coveredBy: coveringRuleset.name };
   }
 
-  return { action: "update" };
+  return { action: "create" };
+}
+
+async function findCoveringRuleset(
+  client: GitHubClient,
+  owner: string,
+  repo: string,
+  summaries: RulesetSummary[],
+  desired: RulesetPayload
+): Promise<GitHubRuleset | undefined> {
+  for (const summary of summaries) {
+    if (summary.target !== "branch" || summary.enforcement !== "active") {
+      continue;
+    }
+
+    const existing = await client.getRepoRuleset(owner, repo, summary.id);
+
+    if (rulesetSatisfiesDesired(existing, desired)) {
+      return existing;
+    }
+  }
+
+  return undefined;
+}
+
+function managedRulesetSatisfiesDesired(existing: GitHubRuleset, desired: RulesetPayload): boolean {
+  return existing.name === desired.name && rulesetSatisfiesDesired(existing, desired);
 }
 
 export function rulesetSatisfiesDesired(existing: GitHubRuleset, desired: RulesetPayload): boolean {
   return (
-    existing.name === desired.name &&
     existing.enforcement === desired.enforcement &&
     canonicalRulesetRules(existing.rules) ===
       canonicalRulesetRules(mergeRules(existing.rules, desired.rules)) &&

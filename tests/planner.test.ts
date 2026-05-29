@@ -3,7 +3,11 @@ import { describe, expect, it } from "vitest";
 import { buildPlan, rulesetSatisfiesDesired } from "../src/app/planner.js";
 import type { GitHubClient } from "../src/github/client.js";
 import type { GitHubRepo, GitHubRuleset, RulesetSummary } from "../src/github/types.js";
-import { DESIRED_REPO_SETTINGS, desiredRulesetPayload } from "../src/policy/defaults.js";
+import {
+  DESIRED_REPO_SETTINGS,
+  desiredRulesetPayload,
+  RULESET_NAME
+} from "../src/policy/defaults.js";
 
 describe("buildPlan", () => {
   it("plans setting changes and ruleset creation", async () => {
@@ -32,15 +36,43 @@ describe("buildPlan", () => {
     ]);
   });
 
-  it("plans managed ruleset creation when only differently named rulesets exist", async () => {
+  it("plans no ruleset change when a differently named ruleset covers the policy", async () => {
+    const desired = desiredRulesetPayload();
     const client = fakeClient({
       repo: baseRepo(),
-      rulesets: [{ id: 99, name: "strict branch policy", target: "branch", enforcement: "active" }]
+      rulesets: [{ id: 99, name: "Protect main", target: "branch", enforcement: "active" }],
+      ruleset: { id: 99, ...desired, name: "Protect main" }
+    });
+
+    await expect(
+      buildPlan(client, { org: "dutifuldev", repos: ["scratch"], all: false })
+    ).resolves.toMatchObject([{ ruleset: { action: "none", coveredBy: "Protect main" } }]);
+  });
+
+  it("plans managed ruleset creation when a differently named ruleset is insufficient", async () => {
+    const desired = desiredRulesetPayload();
+    const client = fakeClient({
+      repo: baseRepo(),
+      rulesets: [{ id: 99, name: "Protect main", target: "branch", enforcement: "active" }],
+      ruleset: { id: 99, ...desired, name: "Protect main", rules: [{ type: "deletion" }] }
     });
 
     await expect(
       buildPlan(client, { org: "dutifuldev", repos: ["scratch"], all: false })
     ).resolves.toMatchObject([{ ruleset: { action: "create" } }]);
+  });
+
+  it("plans managed ruleset updates when the named ruleset is insufficient", async () => {
+    const desired = desiredRulesetPayload();
+    const client = fakeClient({
+      repo: baseRepo(),
+      rulesets: [{ id: 99, name: RULESET_NAME, target: "branch", enforcement: "active" }],
+      ruleset: { id: 99, ...desired, rules: [{ type: "deletion" }] }
+    });
+
+    await expect(
+      buildPlan(client, { org: "dutifuldev", repos: ["scratch"], all: false })
+    ).resolves.toMatchObject([{ ruleset: { action: "update" } }]);
   });
 
   it("plans no ruleset change when payload already matches", () => {

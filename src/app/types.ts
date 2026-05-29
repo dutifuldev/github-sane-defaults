@@ -8,6 +8,7 @@ export type TargetSelection = {
 
 export type RulesetPlan = {
   action: "create" | "update" | "none";
+  coveredBy?: string;
 };
 
 export type RepoPlan = {
