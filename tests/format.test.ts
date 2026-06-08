@@ -101,9 +101,9 @@ describe("formatPlan", () => {
 });
 
 describe("formatApplySummary", () => {
-  it("formats the apply count and nested plan", () => {
+  it("formats only the apply count", () => {
     expect(formatApplySummary({ planned: [], applied: 0 })).toBe(
-      "Applied sane defaults to 0 repositories.\n\nNo repositories selected."
+      "Applied sane defaults to 0 repositories."
     );
   });
 });

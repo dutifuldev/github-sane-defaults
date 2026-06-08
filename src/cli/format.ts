@@ -38,11 +38,7 @@ export function formatPlan(plans: RepoPlan[], options: FormatOptions = {}): stri
 export function formatApplySummary(summary: ApplySummary, options: FormatOptions = {}): string {
   const style = createStyle(options.color === true);
 
-  return [
-    style.success(`Applied sane defaults to ${formatCount(summary.applied, "repository")}.`),
-    "",
-    formatPlan(summary.planned, options)
-  ].join("\n");
+  return style.success(`Applied sane defaults to ${formatCount(summary.applied, "repository")}.`);
 }
 
 function formatRepoPlan(plan: RepoPlan, style: Style): string[] {
