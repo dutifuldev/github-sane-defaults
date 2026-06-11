@@ -19,5 +19,6 @@ jobs:
       - run: npm run check
       - run: npm run dry
       - run: npm run mutate
+      - run: npm run slophammer
       - run: npx -y @simpledoc/simpledoc check
       - run: git diff --check
