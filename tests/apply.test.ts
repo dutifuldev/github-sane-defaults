@@ -20,7 +20,7 @@ describe("applyDefaults", () => {
     });
 
     await expect(
-      applyDefaults(client, { org: "dutifuldev", repos: ["scratch"], all: false })
+      applyDefaults(client, { owner: "dutifuldev", repos: ["scratch"], all: false })
     ).resolves.toMatchObject({ applied: 1 });
 
     expect(calls).toEqual([
@@ -50,7 +50,7 @@ describe("applyDefaults", () => {
       ruleset: currentRuleset
     });
 
-    await applyDefaults(client, { org: "dutifuldev", repos: ["scratch"], all: false });
+    await applyDefaults(client, { owner: "dutifuldev", repos: ["scratch"], all: false });
 
     expect(calls).toEqual([
       "listRepoRulesets:scratch",
@@ -85,7 +85,7 @@ describe("applyDefaults", () => {
       rulesetsAfterPlan: []
     });
 
-    await applyDefaults(client, { org: "dutifuldev", repos: ["scratch"], all: false });
+    await applyDefaults(client, { owner: "dutifuldev", repos: ["scratch"], all: false });
 
     expect(calls).toEqual([
       "listRepoRulesets:scratch",
@@ -110,7 +110,7 @@ function fakeClient(options: FakeClientOptions): GitHubClient {
 
   return {
     getRepo: () => Promise.resolve(options.repo),
-    listOrgRepos: () => Promise.resolve([options.repo]),
+    listOwnerRepos: () => Promise.resolve([options.repo]),
     updateRepoDefaults: (_owner: string, repo: string) => {
       options.calls.push(`updateRepoDefaults:${repo}`);
       return Promise.resolve();

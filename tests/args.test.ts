@@ -6,7 +6,17 @@ describe("parseArgs", () => {
   it("parses a positional repository plan command", () => {
     expect(parseArgs(["plan", "dutifuldev/scratch"])).toEqual({
       command: "plan",
-      org: "dutifuldev",
+      owner: "dutifuldev",
+      repos: ["scratch"],
+      all: false,
+      yes: false
+    });
+  });
+
+  it("parses an owner targeted plan command", () => {
+    expect(parseArgs(["plan", "--owner", "dutifuldev", "--repo", "scratch"])).toEqual({
+      command: "plan",
+      owner: "dutifuldev",
       repos: ["scratch"],
       all: false,
       yes: false
@@ -16,17 +26,17 @@ describe("parseArgs", () => {
   it("parses a legacy targeted plan command", () => {
     expect(parseArgs(["plan", "--org", "dutifuldev", "--repo", "scratch"])).toEqual({
       command: "plan",
-      org: "dutifuldev",
+      owner: "dutifuldev",
       repos: ["scratch"],
       all: false,
       yes: false
     });
   });
 
-  it("parses an org-wide apply command", () => {
+  it("parses an owner-wide apply command", () => {
     expect(parseArgs(["apply", "dutifuldev", "--all"])).toEqual({
       command: "apply",
-      org: "dutifuldev",
+      owner: "dutifuldev",
       repos: [],
       all: true,
       yes: false
@@ -36,7 +46,7 @@ describe("parseArgs", () => {
   it("parses apply confirmation bypass flags", () => {
     expect(parseArgs(["apply", "dutifuldev/scratch", "--yes"])).toMatchObject({
       command: "apply",
-      org: "dutifuldev",
+      owner: "dutifuldev",
       repos: ["scratch"],
       all: false,
       yes: true
@@ -58,13 +68,13 @@ describe("parseArgs", () => {
 
   it("rejects malformed positional repository targets", () => {
     expect(() => parseArgs(["plan", "scratch"])).toThrow(
-      "Repository targets must look like <org>/<repo>"
+      "Repository targets must look like <owner>/<repo>"
     );
   });
 
-  it("rejects conflicting organization targets", () => {
-    expect(() => parseArgs(["plan", "--org", "other", "dutifuldev/scratch"])).toThrow(
-      "Conflicting organization targets"
+  it("rejects conflicting owner targets", () => {
+    expect(() => parseArgs(["plan", "--owner", "other", "dutifuldev/scratch"])).toThrow(
+      "Conflicting owner targets"
     );
   });
 
@@ -81,7 +91,7 @@ describe("parseArgs", () => {
   it("parses an explicit token", () => {
     expect(parseArgs(["plan", "dutifuldev/scratch", "--token", "t"])).toEqual({
       command: "plan",
-      org: "dutifuldev",
+      owner: "dutifuldev",
       repos: ["scratch"],
       all: false,
       yes: false,

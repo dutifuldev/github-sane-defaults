@@ -1,7 +1,7 @@
 import type { RepoSettingChange } from "../policy/types.js";
 
 export type TargetSelection = {
-  org: string;
+  owner: string;
   repos: string[];
   all: boolean;
 };

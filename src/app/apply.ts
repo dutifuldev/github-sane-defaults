@@ -10,7 +10,7 @@ export async function applyDefaults(
 ): Promise<ApplySummary> {
   const planned = await buildPlan(client, selection);
 
-  await applyPlannedDefaults(client, selection.org, planned);
+  await applyPlannedDefaults(client, selection.owner, planned);
 
   return {
     planned,

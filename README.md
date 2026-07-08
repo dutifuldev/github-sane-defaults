@@ -3,9 +3,9 @@
 Apply repeatable GitHub repository defaults and branch rulesets.
 
 `github-sane-defaults` is a small CLI for keeping repository settings
-consistent across one GitHub repository or an entire organization. It previews
-the changes it would make, then applies the same policy through GitHub's REST
-API when you are ready.
+consistent across one GitHub repository, an organization, or repositories owned
+by a user account. It previews the changes it would make, then applies the same
+policy through GitHub's REST API when you are ready.
 
 The default policy is intentionally narrow. It turns on the GitHub merge and
 cleanup settings that keep pull request history tidy, and it creates a default
@@ -14,7 +14,7 @@ history. The CLI manages its own named ruleset, so repeated runs are
 idempotent and easy to review.
 
 Use `plan` first to see drift, then switch to `apply` to make the changes.
-Both commands accept `owner/repo` targets and organization-wide `--all` runs.
+Both commands accept `owner/repo` targets and owner-wide `--all` runs.
 
 ## Install
 
@@ -38,7 +38,7 @@ Use github-sane-defaults to inspect my existing GitHub repositories.
 Attention agent: start here:
 https://github.com/dutifuldev/github-sane-defaults#readme
 
-Ask me for the target org or owner/repo list, then run plan only. Show which
+Ask me for the target owner or owner/repo list, then run plan only. Show which
 repos need branch protection rulesets, deletion/force-push protection, linear
 history, or GitHub merge and cleanup settings enabled. Do not apply changes
 unless I ask.
@@ -64,10 +64,10 @@ Preview changes for one repository:
 github-sane-defaults plan example-org/example-repo
 ```
 
-Preview changes for every non-archived repository in an organization:
+Preview changes for every non-archived repository owned by an organization or user:
 
 ```sh
-github-sane-defaults plan example-org --all
+github-sane-defaults plan example-owner --all
 ```
 
 Apply changes to one repository:
@@ -76,11 +76,15 @@ Apply changes to one repository:
 github-sane-defaults apply example-org/example-repo
 ```
 
-Apply changes to every non-archived repository in an organization:
+Apply changes to every non-archived repository owned by an organization or user:
 
 ```sh
-github-sane-defaults apply example-org --all
+github-sane-defaults apply example-owner --all
 ```
+
+For user account targets, `--all` uses repositories visible through the
+authenticated token and filters them to the requested owner. Use a token that has
+explicit access to the personal repositories you want to audit or update.
 
 `apply` prints the plan and asks for confirmation before changing repository
 settings or rulesets. Use `-y` or `--yes` to skip the prompt in automation:
@@ -89,7 +93,8 @@ settings or rulesets. Use `-y` or `--yes` to skip the prompt in automation:
 github-sane-defaults apply example-org/example-repo --yes
 ```
 
-The legacy `--org example-org --repo example-repo` form is still accepted.
+The `--owner example-owner --repo example-repo` form is also accepted. The legacy
+`--org example-org --repo example-repo` form remains supported.
 
 ## Defaults
 

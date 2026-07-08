@@ -21,7 +21,7 @@ describe("buildPlan", () => {
     });
 
     await expect(
-      buildPlan(client, { org: "dutifuldev", repos: ["scratch"], all: false })
+      buildPlan(client, { owner: "dutifuldev", repos: ["scratch"], all: false })
     ).resolves.toEqual([
       {
         name: "scratch",
@@ -45,7 +45,7 @@ describe("buildPlan", () => {
     });
 
     await expect(
-      buildPlan(client, { org: "dutifuldev", repos: ["scratch"], all: false })
+      buildPlan(client, { owner: "dutifuldev", repos: ["scratch"], all: false })
     ).resolves.toMatchObject([{ ruleset: { action: "none", coveredBy: "Protect main" } }]);
   });
 
@@ -58,7 +58,7 @@ describe("buildPlan", () => {
     });
 
     await expect(
-      buildPlan(client, { org: "dutifuldev", repos: ["scratch"], all: false })
+      buildPlan(client, { owner: "dutifuldev", repos: ["scratch"], all: false })
     ).resolves.toMatchObject([{ ruleset: { action: "create" } }]);
   });
 
@@ -71,7 +71,7 @@ describe("buildPlan", () => {
     });
 
     await expect(
-      buildPlan(client, { org: "dutifuldev", repos: ["scratch"], all: false })
+      buildPlan(client, { owner: "dutifuldev", repos: ["scratch"], all: false })
     ).resolves.toMatchObject([{ ruleset: { action: "update" } }]);
   });
 
@@ -117,7 +117,7 @@ type FakeClientOptions = {
 function fakeClient(options: FakeClientOptions): GitHubClient {
   return {
     getRepo: () => Promise.resolve(options.repo),
-    listOrgRepos: () => Promise.resolve([options.repo]),
+    listOwnerRepos: () => Promise.resolve([options.repo]),
     updateRepoDefaults: () => Promise.resolve(),
     listRepoRulesets: () => Promise.resolve(options.rulesets),
     getRepoRuleset: () => {

@@ -14,7 +14,7 @@ export async function buildPlan(
   const plans: RepoPlan[] = [];
 
   for (const repo of activeRepos) {
-    plans.push(await buildRepoPlan(client, selection.org, repo));
+    plans.push(await buildRepoPlan(client, selection.owner, repo));
   }
 
   return plans;
@@ -25,10 +25,10 @@ async function selectRepos(
   selection: TargetSelection
 ): Promise<GitHubRepo[]> {
   if (selection.all) {
-    return client.listOrgRepos(selection.org);
+    return client.listOwnerRepos(selection.owner);
   }
 
-  return Promise.all(selection.repos.map((repo) => client.getRepo(selection.org, repo)));
+  return Promise.all(selection.repos.map((repo) => client.getRepo(selection.owner, repo)));
 }
 
 async function buildRepoPlan(
