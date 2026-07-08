@@ -9,6 +9,7 @@ afterEach(() => {
 
 describe("RestGitHubClient.listOwnerRepos", () => {
   it("lists organization repositories through the organization endpoint", async () => {
+    const progress: string[] = [];
     const requests = stubFetch(
       new Map<string, unknown>([
         ["https://api.github.com/users/dutifuldev", { type: "Organization" }],
@@ -33,10 +34,18 @@ describe("RestGitHubClient.listOwnerRepos", () => {
       ])
     );
 
-    await expect(new RestGitHubClient("token").listOwnerRepos("dutifuldev")).resolves.toEqual([
-      repo("dutifuldev", "scratch"),
-      repo("dutifuldev", "tools")
-    ]);
+    await expect(
+      new RestGitHubClient("token").listOwnerRepos("dutifuldev", {
+        progress: {
+          loadingRepoDetails: (state) => {
+            progress.push(`start:${String(state.total)}`);
+          },
+          loadedRepoDetails: (state) => {
+            progress.push(`${String(state.completed)}/${String(state.total)}:${state.current}`);
+          }
+        }
+      })
+    ).resolves.toEqual([repo("dutifuldev", "scratch"), repo("dutifuldev", "tools")]);
     expect(requests).toEqual([
       "https://api.github.com/users/dutifuldev",
       "https://api.github.com/orgs/dutifuldev/repos?type=all&per_page=100",
@@ -44,6 +53,11 @@ describe("RestGitHubClient.listOwnerRepos", () => {
       "https://api.github.com/repos/dutifuldev/scratch",
       "https://api.github.com/repos/dutifuldev/tools"
     ]);
+    expect(progress[0]).toBe("start:2");
+    expect(progress.at(-1)?.startsWith("2/2:")).toBe(true);
+    expect(new Set(progress.slice(1).map((item) => item.replace(/^\d+\/\d+:/, "")))).toEqual(
+      new Set(["dutifuldev/scratch", "dutifuldev/tools"])
+    );
   });
 
   it("lists user-owned repositories through the authenticated user endpoint", async () => {

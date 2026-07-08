@@ -1,9 +1,11 @@
 import type { TargetSelection } from "../app/types.js";
+import type { ProgressMode } from "./progress.js";
 
 export type CliCommand = "plan" | "apply";
 
 export type CliOptions = TargetSelection & {
   command: CliCommand;
+  progress?: ProgressMode;
   token?: string;
   yes: boolean;
 };
@@ -31,6 +33,10 @@ export function parseArgs(args: string[]): CliOptions {
     options.token = parsed.token;
   }
 
+  if (parsed.progress !== "auto") {
+    options.progress = parsed.progress;
+  }
+
   return options;
 }
 
@@ -52,6 +58,7 @@ function validateFlags(parsed: ParsedFlags): asserts parsed is ParsedFlags & { o
 
 type ParsedFlags = {
   owner?: string;
+  progress: ProgressMode;
   token?: string;
   repos: string[];
   targets: string[];
@@ -60,7 +67,13 @@ type ParsedFlags = {
 };
 
 function parseFlags(args: string[]): ParsedFlags {
-  const flags: ParsedFlags = { repos: [], targets: [], all: false, yes: false };
+  const flags: ParsedFlags = {
+    repos: [],
+    targets: [],
+    all: false,
+    progress: "auto",
+    yes: false
+  };
 
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index];
@@ -89,6 +102,16 @@ function parseFlag(args: string[], index: number, flags: ParsedFlags): number {
 
   if (arg === "--yes" || arg === "-y") {
     flags.yes = true;
+    return index;
+  }
+
+  if (arg === "--progress") {
+    flags.progress = "always";
+    return index;
+  }
+
+  if (arg === "--no-progress") {
+    flags.progress = "never";
     return index;
   }
 
@@ -192,6 +215,8 @@ export function usage(): string {
     "  github-sane-defaults apply --owner <owner> --repo <repo>",
     "",
     "Options:",
-    "  -y, --yes  Skip apply confirmation"
+    "  -y, --yes     Skip apply confirmation",
+    "  --progress    Show progress even when stderr is not a TTY",
+    "  --no-progress Disable progress output"
   ].join("\n");
 }

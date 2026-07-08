@@ -54,6 +54,15 @@ describe("parseArgs", () => {
     expect(parseArgs(["apply", "dutifuldev/scratch", "-y"])).toMatchObject({ yes: true });
   });
 
+  it("parses progress flags", () => {
+    expect(parseArgs(["plan", "dutifuldev/scratch", "--progress"])).toMatchObject({
+      progress: "always"
+    });
+    expect(parseArgs(["plan", "dutifuldev/scratch", "--no-progress"])).toMatchObject({
+      progress: "never"
+    });
+  });
+
   it("rejects commands without target repositories", () => {
     expect(() => parseArgs(["plan", "--org", "dutifuldev"])).toThrow(
       "Pass at least one --repo value or --all."

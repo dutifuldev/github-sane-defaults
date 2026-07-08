@@ -1,30 +1,44 @@
 import type { GitHubClient } from "../github/client.js";
 import { desiredRulesetPayload, RULESET_NAME } from "../policy/defaults.js";
-import type { ApplySummary, RepoPlan, TargetSelection } from "./types.js";
+import type { ApplyOptions, ApplySummary, RepoPlan, TargetSelection } from "./types.js";
 import { buildPlan } from "./planner.js";
 import { mergeRulesetPayload } from "./planner.js";
 
 export async function applyDefaults(
   client: GitHubClient,
-  selection: TargetSelection
+  selection: TargetSelection,
+  options: ApplyOptions = {}
 ): Promise<ApplySummary> {
-  const planned = await buildPlan(client, selection);
+  const planned = await buildPlan(client, selection, options);
 
-  await applyPlannedDefaults(client, selection.owner, planned);
+  await applyPlannedDefaults(client, selection.owner, planned, options);
 
   return {
     planned,
-    applied: planned.length
+    applied: countChangedRepos(planned)
   };
 }
 
 export async function applyPlannedDefaults(
   client: GitHubClient,
   owner: string,
-  planned: RepoPlan[]
+  planned: RepoPlan[],
+  options: ApplyOptions = {}
 ): Promise<void> {
-  for (const plan of planned) {
+  const changedPlans = planned.filter(repoPlanHasChanges);
+  let completed = 0;
+
+  options.progress?.applyingRepos?.({ owner, total: changedPlans.length });
+
+  for (const plan of changedPlans) {
     await applyRepoPlan(client, owner, plan);
+    completed += 1;
+    options.progress?.appliedRepo?.({
+      owner,
+      total: changedPlans.length,
+      completed,
+      current: plan.fullName
+    });
   }
 }
 
@@ -59,4 +73,12 @@ async function applyRepoPlan(client: GitHubClient, owner: string, plan: RepoPlan
     existing.id,
     mergeRulesetPayload(existingRuleset, desired)
   );
+}
+
+function countChangedRepos(planned: RepoPlan[]): number {
+  return planned.filter(repoPlanHasChanges).length;
+}
+
+function repoPlanHasChanges(plan: RepoPlan): boolean {
+  return plan.settingChanges.length > 0 || plan.ruleset.action !== "none";
 }

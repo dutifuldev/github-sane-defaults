@@ -12,37 +12,46 @@ import {
   shouldUseColor
 } from "./format.js";
 import { parseArgs } from "./args.js";
+import { createProgressReporter } from "./progress.js";
 
 async function main(): Promise<void> {
   const options = parseArgs(process.argv.slice(2));
   const client = new RestGitHubClient(resolveToken(options.token));
   const formatOptions = { color: shouldUseColor() };
+  const progress = createProgressReporter(options.progress);
 
-  if (options.command === "plan") {
-    console.log(formatPlan(await buildPlan(client, options), formatOptions));
-    return;
+  try {
+    if (options.command === "plan") {
+      const planned = await buildPlan(client, options, { progress });
+      progress.stop();
+      console.log(formatPlan(planned, formatOptions));
+      return;
+    }
+
+    const planned = await buildPlan(client, options, { progress });
+    progress.stop();
+
+    console.log(formatPlan(planned, formatOptions));
+
+    if (!planHasChanges(planned)) {
+      console.error("No changes to apply.");
+      return;
+    }
+
+    if (!options.yes && !(await confirmApply())) {
+      console.error("Apply cancelled.");
+      process.exitCode = 1;
+      return;
+    }
+
+    await applyPlannedDefaults(client, options.owner, planned, { progress });
+
+    const summary: ApplySummary = { planned, applied: countChangedRepos(planned) };
+    console.log("");
+    console.log(formatApplySummary(summary, formatOptions));
+  } finally {
+    progress.stop();
   }
-
-  const planned = await buildPlan(client, options);
-
-  console.log(formatPlan(planned, formatOptions));
-
-  if (!planHasChanges(planned)) {
-    console.error("No changes to apply.");
-    return;
-  }
-
-  if (!options.yes && !(await confirmApply())) {
-    console.error("Apply cancelled.");
-    process.exitCode = 1;
-    return;
-  }
-
-  await applyPlannedDefaults(client, options.owner, planned);
-
-  const summary: ApplySummary = { planned, applied: countChangedRepos(planned) };
-  console.log("");
-  console.log(formatApplySummary(summary, formatOptions));
 }
 
 main().catch((error: unknown) => {
