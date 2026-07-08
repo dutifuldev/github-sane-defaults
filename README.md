@@ -96,6 +96,12 @@ github-sane-defaults apply example-org/example-repo --yes
 The `--owner example-owner --repo example-repo` form is also accepted. The legacy
 `--org example-org --repo example-repo` form remains supported.
 
+Long owner-wide runs show a single-line progress bar on `stderr` when running in
+an interactive terminal. The status line covers repository detail loading,
+planning, and the mutation phase of `apply`. The final plan and apply summaries
+still print to `stdout`, so scripted output stays clean. Use `--no-progress` to
+disable the status bar or `--progress` to force it.
+
 ## Defaults
 
 Repository settings:

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { applyDefaults } from "../src/app/apply.js";
+import { applyDefaults, applyPlannedDefaults } from "../src/app/apply.js";
+import type { RepoPlan } from "../src/app/types.js";
 import type { GitHubClient } from "../src/github/client.js";
 import type { GitHubRepo, GitHubRuleset, RulesetSummary } from "../src/github/types.js";
 import {
@@ -94,6 +95,30 @@ describe("applyDefaults", () => {
       "createRepoRuleset:scratch"
     ]);
   });
+
+  it("reports apply progress for changed repositories only", async () => {
+    const calls: string[] = [];
+    const progress: string[] = [];
+    const client = fakeClient({
+      calls,
+      repo: baseRepo(),
+      rulesets: []
+    });
+
+    await applyPlannedDefaults(client, "dutifuldev", [cleanPlan(), settingsPlan(), rulesetPlan()], {
+      progress: {
+        applyingRepos: (state) => {
+          progress.push(`start:${String(state.total)}`);
+        },
+        appliedRepo: (state) => {
+          progress.push(`${String(state.completed)}:${state.current}`);
+        }
+      }
+    });
+
+    expect(calls).toEqual(["updateRepoDefaults:settings", "createRepoRuleset:ruleset"]);
+    expect(progress).toEqual(["start:2", "1:dutifuldev/settings", "2:dutifuldev/ruleset"]);
+  });
 });
 
 type FakeClientOptions = {
@@ -152,5 +177,35 @@ function baseRepo(): GitHubRepo {
     archived: false,
     disabled: false,
     default_branch: "main"
+  };
+}
+
+function cleanPlan(): RepoPlan {
+  return {
+    name: "clean",
+    fullName: "dutifuldev/clean",
+    archived: false,
+    settingChanges: [],
+    ruleset: { action: "none" }
+  };
+}
+
+function settingsPlan(): RepoPlan {
+  return {
+    name: "settings",
+    fullName: "dutifuldev/settings",
+    archived: false,
+    settingChanges: [{ key: "allow_auto_merge", current: false, desired: true }],
+    ruleset: { action: "none" }
+  };
+}
+
+function rulesetPlan(): RepoPlan {
+  return {
+    name: "ruleset",
+    fullName: "dutifuldev/ruleset",
+    archived: false,
+    settingChanges: [],
+    ruleset: { action: "create" }
   };
 }

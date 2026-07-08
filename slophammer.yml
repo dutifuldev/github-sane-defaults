@@ -19,17 +19,23 @@ typescript:
       - src/cli
       - src/github/parse.ts
       - src/policy
+      - src/shared
   dependency_boundaries:
     - from: src/cli
       allow:
         - src/app
         - src/github
+        - src/shared
     - from: src/app
       allow:
         - src/github
         - src/policy
+        - src/shared
     - from: src/github
       allow:
         - src/policy
+        - src/shared
     - from: src/policy
+      allow: []
+    - from: src/shared
       allow: []

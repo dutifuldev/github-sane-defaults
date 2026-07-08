@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process";
 
 import { DESIRED_REPO_SETTINGS } from "../policy/defaults.js";
 import type { RulesetPayload } from "../policy/types.js";
+import { mapWithConcurrency } from "../shared/concurrency.js";
 import {
   parseOwnerType,
   parseRepo,
@@ -17,6 +18,29 @@ type GitHubResponse = {
   headers: Headers;
 };
 
+const DEFAULT_REPO_DETAIL_CONCURRENCY = 12;
+
+export type RepoDetailsProgressLoading = {
+  owner: string;
+  total: number;
+};
+
+export type RepoDetailsProgressLoaded = {
+  owner: string;
+  total: number;
+  completed: number;
+  current: string;
+};
+
+export type RepoDetailsProgress = {
+  loadingRepoDetails?(state: RepoDetailsProgressLoading): void;
+  loadedRepoDetails?(state: RepoDetailsProgressLoaded): void;
+};
+
+export type ListOwnerReposOptions = {
+  progress?: RepoDetailsProgress;
+};
+
 export class GitHubApiError extends Error {
   public readonly context: GitHubErrorContext;
 
@@ -30,7 +54,7 @@ export class GitHubApiError extends Error {
 
 export type GitHubClient = {
   getRepo(owner: string, repo: string): Promise<GitHubRepo>;
-  listOwnerRepos(owner: string): Promise<GitHubRepo[]>;
+  listOwnerRepos(owner: string, options?: ListOwnerReposOptions): Promise<GitHubRepo[]>;
   updateRepoDefaults(owner: string, repo: string): Promise<void>;
   listRepoRulesets(owner: string, repo: string): Promise<RulesetSummary[]>;
   getRepoRuleset(owner: string, repo: string, id: number): Promise<GitHubRuleset>;
@@ -54,26 +78,35 @@ export class RestGitHubClient implements GitHubClient {
     return parseRepo(await this.request("GET", `/repos/${owner}/${repo}`));
   }
 
-  public async listOwnerRepos(owner: string): Promise<GitHubRepo[]> {
+  public async listOwnerRepos(
+    owner: string,
+    options: ListOwnerReposOptions = {}
+  ): Promise<GitHubRepo[]> {
     const ownerType = parseOwnerType(await this.request("GET", `/users/${owner}`));
 
     if (ownerType === "Organization") {
-      return this.listOrganizationRepos(owner);
+      return this.listOrganizationRepos(owner, options);
     }
 
-    return this.listUserOwnedRepos(owner);
+    return this.listUserOwnedRepos(owner, options);
   }
 
-  private async listOrganizationRepos(org: string): Promise<GitHubRepo[]> {
+  private async listOrganizationRepos(
+    org: string,
+    options: ListOwnerReposOptions
+  ): Promise<GitHubRepo[]> {
     const repoNames = await this.paginate(
       `/orgs/${org}/repos?type=all&per_page=100`,
       parseRepoNames
     );
 
-    return Promise.all(repoNames.map((repo) => this.getRepo(org, repo)));
+    return this.loadRepoDetails(org, repoNames, options.progress);
   }
 
-  private async listUserOwnedRepos(owner: string): Promise<GitHubRepo[]> {
+  private async listUserOwnedRepos(
+    owner: string,
+    options: ListOwnerReposOptions
+  ): Promise<GitHubRepo[]> {
     const normalizedOwner = owner.toLowerCase();
     const repoItems = await this.paginate(
       "/user/repos?visibility=all&affiliation=owner,collaborator&per_page=100",
@@ -83,7 +116,29 @@ export class RestGitHubClient implements GitHubClient {
       .filter((repo) => repo.owner_login.toLowerCase() === normalizedOwner)
       .map((repo) => repo.name);
 
-    return Promise.all(ownedRepoNames.map((repo) => this.getRepo(owner, repo)));
+    return this.loadRepoDetails(owner, ownedRepoNames, options.progress);
+  }
+
+  private async loadRepoDetails(
+    owner: string,
+    repoNames: string[],
+    progress: RepoDetailsProgress | undefined
+  ): Promise<GitHubRepo[]> {
+    let completed = 0;
+
+    progress?.loadingRepoDetails?.({ owner, total: repoNames.length });
+
+    return mapWithConcurrency(repoNames, DEFAULT_REPO_DETAIL_CONCURRENCY, async (repo) => {
+      const detail = await this.getRepo(owner, repo);
+      completed += 1;
+      progress?.loadedRepoDetails?.({
+        owner,
+        total: repoNames.length,
+        completed,
+        current: detail.full_name
+      });
+      return detail;
+    });
   }
 
   public async updateRepoDefaults(owner: string, repo: string): Promise<void> {

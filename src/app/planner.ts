@@ -3,29 +3,66 @@ import type { GitHubRuleset, RulesetSummary } from "../github/types.js";
 import type { GitHubRepo } from "../github/types.js";
 import { desiredRulesetPayload, repoSettingChanges, RULESET_NAME } from "../policy/defaults.js";
 import type { ExistingRulesetRule, RefNameCondition, RulesetPayload } from "../policy/types.js";
-import type { RepoPlan, RulesetPlan, TargetSelection } from "./types.js";
+import { mapWithConcurrency } from "../shared/concurrency.js";
+import type { BuildPlanOptions, RepoPlan, RulesetPlan, TargetSelection } from "./types.js";
+
+const DEFAULT_PLAN_CONCURRENCY = 8;
 
 export async function buildPlan(
   client: GitHubClient,
-  selection: TargetSelection
+  selection: TargetSelection,
+  options: BuildPlanOptions = {}
 ): Promise<RepoPlan[]> {
-  const repos = await selectRepos(client, selection);
+  options.progress?.loadingRepos?.(selection.owner);
+
+  const repos = await selectRepos(client, selection, options);
   const activeRepos = repos.filter((repo) => !repo.archived && !repo.disabled);
-  const plans: RepoPlan[] = [];
+  const skipped = repos.length - activeRepos.length;
+  const progressState = { completed: 0, changed: 0, clean: 0 };
 
-  for (const repo of activeRepos) {
-    plans.push(await buildRepoPlan(client, selection.owner, repo));
-  }
+  options.progress?.selectedRepos?.({
+    owner: selection.owner,
+    total: activeRepos.length,
+    skipped
+  });
 
-  return plans;
+  return mapWithConcurrency(
+    activeRepos,
+    options.concurrency ?? DEFAULT_PLAN_CONCURRENCY,
+    async (repo) => {
+      const plan = await buildRepoPlan(client, selection.owner, repo);
+      progressState.completed += 1;
+
+      if (repoPlanHasChanges(plan)) {
+        progressState.changed += 1;
+      } else {
+        progressState.clean += 1;
+      }
+
+      options.progress?.plannedRepo?.({
+        owner: selection.owner,
+        total: activeRepos.length,
+        completed: progressState.completed,
+        changed: progressState.changed,
+        clean: progressState.clean,
+        skipped,
+        current: repo.full_name
+      });
+
+      return plan;
+    }
+  );
 }
 
 async function selectRepos(
   client: GitHubClient,
-  selection: TargetSelection
+  selection: TargetSelection,
+  options: BuildPlanOptions
 ): Promise<GitHubRepo[]> {
   if (selection.all) {
-    return client.listOwnerRepos(selection.owner);
+    return options.progress === undefined
+      ? client.listOwnerRepos(selection.owner)
+      : client.listOwnerRepos(selection.owner, { progress: options.progress });
   }
 
   return Promise.all(selection.repos.map((repo) => client.getRepo(selection.owner, repo)));
@@ -99,6 +136,10 @@ async function findCoveringRuleset(
 
 function managedRulesetSatisfiesDesired(existing: GitHubRuleset, desired: RulesetPayload): boolean {
   return existing.name === desired.name && rulesetSatisfiesDesired(existing, desired);
+}
+
+function repoPlanHasChanges(plan: RepoPlan): boolean {
+  return plan.settingChanges.length > 0 || plan.ruleset.action !== "none";
 }
 
 export function rulesetSatisfiesDesired(existing: GitHubRuleset, desired: RulesetPayload): boolean {
