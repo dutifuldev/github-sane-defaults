@@ -13,6 +13,14 @@ export type GitHubRepo = RepoSettings & {
   default_branch: string;
 };
 
+export type GitHubOwnerType = "Organization" | "User";
+
+export type GitHubRepoListItem = {
+  name: string;
+  full_name: string;
+  owner_login: string;
+};
+
 export type RulesetSummary = {
   id: number;
   name: string;

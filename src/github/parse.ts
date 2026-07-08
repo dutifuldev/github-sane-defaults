@@ -1,4 +1,10 @@
-import type { GitHubRepo, GitHubRuleset, RulesetSummary } from "./types.js";
+import type {
+  GitHubOwnerType,
+  GitHubRepo,
+  GitHubRepoListItem,
+  GitHubRuleset,
+  RulesetSummary
+} from "./types.js";
 import type { BypassActor, ExistingRulesetRule, RepoSettings } from "../policy/types.js";
 
 type JsonRecord = Record<string, unknown>;
@@ -63,6 +69,14 @@ function asStringArray(value: unknown, label: string): string[] {
   return value.map((item) => String(item));
 }
 
+function asArray(value: unknown, label: string): unknown[] {
+  if (!Array.isArray(value)) {
+    throw new Error(`${label} must be an array`);
+  }
+
+  return value;
+}
+
 function asRepoSettings(record: JsonRecord, label: string): RepoSettings {
   const squashTitle = asString(record, "squash_merge_commit_title", label);
   const squashMessage = asString(record, "squash_merge_commit_message", label);
@@ -104,12 +118,34 @@ export function parseRepo(value: unknown): GitHubRepo {
   };
 }
 
-export function parseRepoNames(value: unknown): string[] {
-  if (!Array.isArray(value)) {
-    throw new Error("repos response must be an array");
+export function parseOwnerType(value: unknown): GitHubOwnerType {
+  const record = asRecord(value, "owner");
+  const type = asString(record, "type", "owner");
+
+  if (type !== "Organization" && type !== "User") {
+    throw new Error(`unsupported owner type: ${type}`);
   }
 
-  return value.map((item) => asString(asRecord(item, "repo"), "name", "repo"));
+  return type;
+}
+
+export function parseRepoNames(value: unknown): string[] {
+  return asArray(value, "repos response").map((item) =>
+    asString(asRecord(item, "repo"), "name", "repo")
+  );
+}
+
+export function parseRepoListItems(value: unknown): GitHubRepoListItem[] {
+  return asArray(value, "repos response").map((item) => {
+    const record = asRecord(item, "repo");
+    const owner = asRecord(record["owner"], "repo.owner");
+
+    return {
+      name: asString(record, "name", "repo"),
+      full_name: asString(record, "full_name", "repo"),
+      owner_login: asString(owner, "login", "repo.owner")
+    };
+  });
 }
 
 export function parseRulesetSummaries(value: unknown): RulesetSummary[] {

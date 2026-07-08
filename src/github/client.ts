@@ -2,8 +2,20 @@ import { execFileSync } from "node:child_process";
 
 import { DESIRED_REPO_SETTINGS } from "../policy/defaults.js";
 import type { RulesetPayload } from "../policy/types.js";
-import { parseRepo, parseRepoNames, parseRuleset, parseRulesetSummaries } from "./parse.js";
+import {
+  parseOwnerType,
+  parseRepo,
+  parseRepoListItems,
+  parseRepoNames,
+  parseRuleset,
+  parseRulesetSummaries
+} from "./parse.js";
 import type { GitHubErrorContext, GitHubRepo, GitHubRuleset, RulesetSummary } from "./types.js";
+
+type GitHubResponse = {
+  body: unknown;
+  headers: Headers;
+};
 
 export class GitHubApiError extends Error {
   public readonly context: GitHubErrorContext;
@@ -18,7 +30,7 @@ export class GitHubApiError extends Error {
 
 export type GitHubClient = {
   getRepo(owner: string, repo: string): Promise<GitHubRepo>;
-  listOrgRepos(org: string): Promise<GitHubRepo[]>;
+  listOwnerRepos(owner: string): Promise<GitHubRepo[]>;
   updateRepoDefaults(owner: string, repo: string): Promise<void>;
   listRepoRulesets(owner: string, repo: string): Promise<RulesetSummary[]>;
   getRepoRuleset(owner: string, repo: string, id: number): Promise<GitHubRuleset>;
@@ -42,19 +54,36 @@ export class RestGitHubClient implements GitHubClient {
     return parseRepo(await this.request("GET", `/repos/${owner}/${repo}`));
   }
 
-  public async listOrgRepos(org: string): Promise<GitHubRepo[]> {
-    const repos: GitHubRepo[] = [];
+  public async listOwnerRepos(owner: string): Promise<GitHubRepo[]> {
+    const ownerType = parseOwnerType(await this.request("GET", `/users/${owner}`));
 
-    for (let page = 1; ; page += 1) {
-      const path = `/orgs/${org}/repos?type=all&per_page=100&page=${String(page)}`;
-      const repoNames = parseRepoNames(await this.request("GET", path));
-      const pageRepos = await Promise.all(repoNames.map((repo) => this.getRepo(org, repo)));
-      repos.push(...pageRepos);
-
-      if (repoNames.length < 100) {
-        return repos;
-      }
+    if (ownerType === "Organization") {
+      return this.listOrganizationRepos(owner);
     }
+
+    return this.listUserOwnedRepos(owner);
+  }
+
+  private async listOrganizationRepos(org: string): Promise<GitHubRepo[]> {
+    const repoNames = await this.paginate(
+      `/orgs/${org}/repos?type=all&per_page=100`,
+      parseRepoNames
+    );
+
+    return Promise.all(repoNames.map((repo) => this.getRepo(org, repo)));
+  }
+
+  private async listUserOwnedRepos(owner: string): Promise<GitHubRepo[]> {
+    const normalizedOwner = owner.toLowerCase();
+    const repoItems = await this.paginate(
+      "/user/repos?visibility=all&affiliation=owner,collaborator&per_page=100",
+      parseRepoListItems
+    );
+    const ownedRepoNames = repoItems
+      .filter((repo) => repo.owner_login.toLowerCase() === normalizedOwner)
+      .map((repo) => repo.name);
+
+    return Promise.all(ownedRepoNames.map((repo) => this.getRepo(owner, repo)));
   }
 
   public async updateRepoDefaults(owner: string, repo: string): Promise<void> {
@@ -62,17 +91,10 @@ export class RestGitHubClient implements GitHubClient {
   }
 
   public async listRepoRulesets(owner: string, repo: string): Promise<RulesetSummary[]> {
-    const rulesets: RulesetSummary[] = [];
-
-    for (let page = 1; ; page += 1) {
-      const path = `/repos/${owner}/${repo}/rulesets?includes_parents=false&per_page=100&page=${String(page)}`;
-      const pageRulesets = parseRulesetSummaries(await this.request("GET", path));
-      rulesets.push(...pageRulesets);
-
-      if (pageRulesets.length < 100) {
-        return rulesets;
-      }
-    }
+    return this.paginate(
+      `/repos/${owner}/${repo}/rulesets?includes_parents=false&per_page=100`,
+      parseRulesetSummaries
+    );
   }
 
   public async getRepoRuleset(owner: string, repo: string, id: number): Promise<GitHubRuleset> {
@@ -98,7 +120,28 @@ export class RestGitHubClient implements GitHubClient {
     await this.request("PUT", `/repos/${owner}/${repo}/rulesets/${String(id)}`, payload);
   }
 
+  private async paginate<T>(firstPath: string, parseItems: (value: unknown) => T[]): Promise<T[]> {
+    const items: T[] = [];
+    let path: string | undefined = firstPath;
+
+    while (path !== undefined) {
+      const response = await this.requestWithHeaders("GET", path);
+      items.push(...parseItems(response.body));
+      path = nextPagePath(response.headers.get("link"));
+    }
+
+    return items;
+  }
+
   private async request(method: string, path: string, body?: unknown): Promise<unknown> {
+    return (await this.requestWithHeaders(method, path, body)).body;
+  }
+
+  private async requestWithHeaders(
+    method: string,
+    path: string,
+    body?: unknown
+  ): Promise<GitHubResponse> {
     const init: RequestInit = {
       method,
       headers: {
@@ -125,11 +168,39 @@ export class RestGitHubClient implements GitHubClient {
     }
 
     if (response.status === 204) {
-      return null;
+      return { body: null, headers: response.headers };
     }
 
-    return response.json();
+    return { body: await response.json(), headers: response.headers };
   }
+}
+
+function nextPagePath(linkHeader: string | null): string | undefined {
+  if (linkHeader === null) {
+    return undefined;
+  }
+
+  for (const link of linkHeader.split(/,\s*(?=<)/)) {
+    const match = /^<([^>]+)>(.*)$/.exec(link.trim());
+
+    if (match?.[1] === undefined || match[2] === undefined) {
+      continue;
+    }
+
+    const params = match[2]
+      .split(";")
+      .map((part) => part.trim())
+      .filter((part) => part.length > 0);
+
+    if (!params.includes('rel="next"')) {
+      continue;
+    }
+
+    const url = new URL(match[1]);
+    return `${url.pathname}${url.search}`;
+  }
+
+  return undefined;
 }
 
 export function resolveToken(explicitToken?: string): string {

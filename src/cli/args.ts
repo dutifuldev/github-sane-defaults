@@ -21,7 +21,7 @@ export function parseArgs(args: string[]): CliOptions {
 
   const options: CliOptions = {
     command,
-    org: parsed.org,
+    owner: parsed.owner,
     repos: parsed.repos,
     all: parsed.all,
     yes: parsed.yes
@@ -34,11 +34,11 @@ export function parseArgs(args: string[]): CliOptions {
   return options;
 }
 
-function validateFlags(parsed: ParsedFlags): asserts parsed is ParsedFlags & { org: string } {
+function validateFlags(parsed: ParsedFlags): asserts parsed is ParsedFlags & { owner: string } {
   applyPositionalTargets(parsed);
 
-  if (parsed.org === undefined) {
-    throw new Error("Missing required --org option.\n\n" + usage());
+  if (parsed.owner === undefined) {
+    throw new Error("Missing required owner target.\n\n" + usage());
   }
 
   if (!parsed.all && parsed.repos.length === 0) {
@@ -51,7 +51,7 @@ function validateFlags(parsed: ParsedFlags): asserts parsed is ParsedFlags & { o
 }
 
 type ParsedFlags = {
-  org?: string;
+  owner?: string;
   token?: string;
   repos: string[];
   targets: string[];
@@ -101,7 +101,7 @@ function parseFlag(args: string[], index: number, flags: ParsedFlags): number {
 }
 
 function parseValueFlag(args: string[], index: number, flags: ParsedFlags, arg: string): number {
-  if (arg !== "--org" && arg !== "--repo" && arg !== "--token") {
+  if (arg !== "--org" && arg !== "--owner" && arg !== "--repo" && arg !== "--token") {
     throw new Error(`Unknown option: ${arg}`);
   }
 
@@ -116,8 +116,8 @@ function parseValueFlag(args: string[], index: number, flags: ParsedFlags, arg: 
 }
 
 function setFlag(flags: ParsedFlags, arg: string, value: string): void {
-  if (arg === "--org") {
-    flags.org = value;
+  if (arg === "--org" || arg === "--owner") {
+    flags.owner = value;
     return;
   }
 
@@ -135,7 +135,7 @@ function applyPositionalTargets(flags: ParsedFlags): void {
   }
 
   if (flags.all) {
-    applyOrgTarget(flags);
+    applyOwnerTarget(flags);
     return;
   }
 
@@ -144,52 +144,52 @@ function applyPositionalTargets(flags: ParsedFlags): void {
   }
 }
 
-function applyOrgTarget(flags: ParsedFlags): void {
+function applyOwnerTarget(flags: ParsedFlags): void {
   if (flags.targets.length !== 1 || flags.targets[0]?.includes("/") === true) {
-    throw new Error("Use an organization name with --all, for example: example-org --all.");
+    throw new Error("Use an owner name with --all, for example: example-owner --all.");
   }
 
-  setTargetOrg(flags, flags.targets[0]);
+  setTargetOwner(flags, flags.targets[0]);
 }
 
 function applyRepoTarget(flags: ParsedFlags, target: string): void {
-  const [org, repo, extra] = target.split("/");
+  const [owner, repo, extra] = target.split("/");
 
   if (
-    org === undefined ||
+    owner === undefined ||
     repo === undefined ||
-    org.length === 0 ||
+    owner.length === 0 ||
     repo.length === 0 ||
     extra !== undefined
   ) {
-    throw new Error(`Repository targets must look like <org>/<repo>: ${target}`);
+    throw new Error(`Repository targets must look like <owner>/<repo>: ${target}`);
   }
 
-  setTargetOrg(flags, org);
+  setTargetOwner(flags, owner);
   flags.repos.push(repo);
 }
 
-function setTargetOrg(flags: ParsedFlags, org: string | undefined): void {
-  if (org === undefined) {
-    throw new Error("Missing organization target.");
+function setTargetOwner(flags: ParsedFlags, owner: string | undefined): void {
+  if (owner === undefined) {
+    throw new Error("Missing owner target.");
   }
 
-  if (flags.org !== undefined && flags.org !== org) {
-    throw new Error(`Conflicting organization targets: ${flags.org} and ${org}.`);
+  if (flags.owner !== undefined && flags.owner !== owner) {
+    throw new Error(`Conflicting owner targets: ${flags.owner} and ${owner}.`);
   }
 
-  flags.org = org;
+  flags.owner = owner;
 }
 
 export function usage(): string {
   return [
     "Usage:",
-    "  github-sane-defaults plan <org>/<repo>",
-    "  github-sane-defaults apply <org>/<repo>",
-    "  github-sane-defaults plan <org> --all",
-    "  github-sane-defaults apply <org> --all",
-    "  github-sane-defaults plan --org <org> --repo <repo>",
-    "  github-sane-defaults apply --org <org> --repo <repo>",
+    "  github-sane-defaults plan <owner>/<repo>",
+    "  github-sane-defaults apply <owner>/<repo>",
+    "  github-sane-defaults plan <owner> --all",
+    "  github-sane-defaults apply <owner> --all",
+    "  github-sane-defaults plan --owner <owner> --repo <repo>",
+    "  github-sane-defaults apply --owner <owner> --repo <repo>",
     "",
     "Options:",
     "  -y, --yes  Skip apply confirmation"

@@ -38,7 +38,7 @@ async function main(): Promise<void> {
     return;
   }
 
-  await applyPlannedDefaults(client, options.org, planned);
+  await applyPlannedDefaults(client, options.owner, planned);
 
   const summary: ApplySummary = { planned, applied: countChangedRepos(planned) };
   console.log("");

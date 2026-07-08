@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  parseOwnerType,
   parseRepo,
+  parseRepoListItems,
   parseRepoNames,
   parseRuleset,
   parseRulesetSummaries
@@ -59,6 +61,17 @@ describe("parseRepo", () => {
   });
 });
 
+describe("parseOwnerType", () => {
+  it("parses supported owner types", () => {
+    expect(parseOwnerType({ type: "User" })).toBe("User");
+    expect(parseOwnerType({ type: "Organization" })).toBe("Organization");
+  });
+
+  it("rejects unsupported owner types", () => {
+    expect(() => parseOwnerType({ type: "Bot" })).toThrow("unsupported owner type");
+  });
+});
+
 describe("parseRepoNames", () => {
   it("parses repository names from GitHub list responses", () => {
     expect(
@@ -71,6 +84,26 @@ describe("parseRepoNames", () => {
 
   it("rejects non-array repository list responses", () => {
     expect(() => parseRepoNames({})).toThrow("repos response must be an array");
+  });
+});
+
+describe("parseRepoListItems", () => {
+  it("parses repository owner logins from list responses", () => {
+    expect(
+      parseRepoListItems([
+        { name: "scratch", full_name: "dutifuldev/scratch", owner: { login: "dutifuldev" } },
+        { name: "bob", full_name: "osolmaz/bob", owner: { login: "osolmaz" } }
+      ])
+    ).toEqual([
+      { name: "scratch", full_name: "dutifuldev/scratch", owner_login: "dutifuldev" },
+      { name: "bob", full_name: "osolmaz/bob", owner_login: "osolmaz" }
+    ]);
+  });
+
+  it("rejects list responses without owner logins", () => {
+    expect(() =>
+      parseRepoListItems([{ name: "scratch", full_name: "dutifuldev/scratch" }])
+    ).toThrow("repo.owner");
   });
 });
 
