@@ -21,7 +21,7 @@ describe("applyDefaults", () => {
     });
 
     await expect(
-      applyDefaults(client, { owner: "dutifuldev", repos: ["scratch"], all: false })
+      applyDefaults(client, { owner: "example-org", repos: ["scratch"], all: false })
     ).resolves.toMatchObject({ applied: 1 });
 
     expect(calls).toEqual([
@@ -51,7 +51,7 @@ describe("applyDefaults", () => {
       ruleset: currentRuleset
     });
 
-    await applyDefaults(client, { owner: "dutifuldev", repos: ["scratch"], all: false });
+    await applyDefaults(client, { owner: "example-org", repos: ["scratch"], all: false });
 
     expect(calls).toEqual([
       "listRepoRulesets:scratch",
@@ -86,7 +86,7 @@ describe("applyDefaults", () => {
       rulesetsAfterPlan: []
     });
 
-    await applyDefaults(client, { owner: "dutifuldev", repos: ["scratch"], all: false });
+    await applyDefaults(client, { owner: "example-org", repos: ["scratch"], all: false });
 
     expect(calls).toEqual([
       "listRepoRulesets:scratch",
@@ -105,19 +105,24 @@ describe("applyDefaults", () => {
       rulesets: []
     });
 
-    await applyPlannedDefaults(client, "dutifuldev", [cleanPlan(), settingsPlan(), rulesetPlan()], {
-      progress: {
-        applyingRepos: (state) => {
-          progress.push(`start:${String(state.total)}`);
-        },
-        appliedRepo: (state) => {
-          progress.push(`${String(state.completed)}:${state.current}`);
+    await applyPlannedDefaults(
+      client,
+      "example-org",
+      [cleanPlan(), settingsPlan(), rulesetPlan()],
+      {
+        progress: {
+          applyingRepos: (state) => {
+            progress.push(`start:${String(state.total)}`);
+          },
+          appliedRepo: (state) => {
+            progress.push(`${String(state.completed)}:${state.current}`);
+          }
         }
       }
-    });
+    );
 
     expect(calls).toEqual(["updateRepoDefaults:settings", "createRepoRuleset:ruleset"]);
-    expect(progress).toEqual(["start:2", "1:dutifuldev/settings", "2:dutifuldev/ruleset"]);
+    expect(progress).toEqual(["start:2", "1:example-org/settings", "2:example-org/ruleset"]);
   });
 });
 
@@ -173,7 +178,7 @@ function baseRepo(): GitHubRepo {
   return {
     ...DESIRED_REPO_SETTINGS,
     name: "scratch",
-    full_name: "dutifuldev/scratch",
+    full_name: "osolmaz/scratch",
     archived: false,
     disabled: false,
     default_branch: "main"
@@ -183,7 +188,7 @@ function baseRepo(): GitHubRepo {
 function cleanPlan(): RepoPlan {
   return {
     name: "clean",
-    fullName: "dutifuldev/clean",
+    fullName: "example-org/clean",
     archived: false,
     settingChanges: [],
     ruleset: { action: "none" }
@@ -193,7 +198,7 @@ function cleanPlan(): RepoPlan {
 function settingsPlan(): RepoPlan {
   return {
     name: "settings",
-    fullName: "dutifuldev/settings",
+    fullName: "example-org/settings",
     archived: false,
     settingChanges: [{ key: "allow_auto_merge", current: false, desired: true }],
     ruleset: { action: "none" }
@@ -203,7 +208,7 @@ function settingsPlan(): RepoPlan {
 function rulesetPlan(): RepoPlan {
   return {
     name: "ruleset",
-    fullName: "dutifuldev/ruleset",
+    fullName: "example-org/ruleset",
     archived: false,
     settingChanges: [],
     ruleset: { action: "create" }

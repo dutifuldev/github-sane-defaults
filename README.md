@@ -36,7 +36,7 @@ Copy this block into your coding agent to audit existing GitHub repositories.
 Use github-sane-defaults to inspect my existing GitHub repositories.
 
 Attention agent: start here:
-https://github.com/dutifuldev/github-sane-defaults#readme
+https://github.com/osolmaz/github-sane-defaults#readme
 
 Ask me for the target owner or owner/repo list, then run plan only. Show which
 repos need branch protection rulesets, deletion/force-push protection, linear

@@ -12,30 +12,30 @@ describe("RestGitHubClient.listOwnerRepos", () => {
     const progress: string[] = [];
     const requests = stubFetch(
       new Map<string, unknown>([
-        ["https://api.github.com/users/dutifuldev", { type: "Organization" }],
+        ["https://api.github.com/users/example-org", { type: "Organization" }],
         [
-          "https://api.github.com/orgs/dutifuldev/repos?type=all&per_page=100",
-          [repoListItem("dutifuldev", "scratch")]
+          "https://api.github.com/orgs/example-org/repos?type=all&per_page=100",
+          [repoListItem("example-org", "scratch")]
         ],
         [
-          "https://api.github.com/orgs/dutifuldev/repos?type=all&per_page=100&page=2",
-          [repoListItem("dutifuldev", "tools")]
+          "https://api.github.com/orgs/example-org/repos?type=all&per_page=100&page=2",
+          [repoListItem("example-org", "tools")]
         ],
-        ["https://api.github.com/repos/dutifuldev/tools", repo("dutifuldev", "tools")],
-        ["https://api.github.com/repos/dutifuldev/scratch", repo("dutifuldev", "scratch")]
+        ["https://api.github.com/repos/example-org/tools", repo("example-org", "tools")],
+        ["https://api.github.com/repos/example-org/scratch", repo("example-org", "scratch")]
       ]),
       new Map<string, Record<string, string>>([
         [
-          "https://api.github.com/orgs/dutifuldev/repos?type=all&per_page=100",
+          "https://api.github.com/orgs/example-org/repos?type=all&per_page=100",
           {
-            link: '<https://api.github.com/orgs/dutifuldev/repos?type=all&per_page=100&page=2>; rel="next"'
+            link: '<https://api.github.com/orgs/example-org/repos?type=all&per_page=100&page=2>; rel="next"'
           }
         ]
       ])
     );
 
     await expect(
-      new RestGitHubClient("token").listOwnerRepos("dutifuldev", {
+      new RestGitHubClient("token").listOwnerRepos("example-org", {
         progress: {
           loadingRepoDetails: (state) => {
             progress.push(`start:${String(state.total)}`);
@@ -45,18 +45,18 @@ describe("RestGitHubClient.listOwnerRepos", () => {
           }
         }
       })
-    ).resolves.toEqual([repo("dutifuldev", "scratch"), repo("dutifuldev", "tools")]);
+    ).resolves.toEqual([repo("example-org", "scratch"), repo("example-org", "tools")]);
     expect(requests).toEqual([
-      "https://api.github.com/users/dutifuldev",
-      "https://api.github.com/orgs/dutifuldev/repos?type=all&per_page=100",
-      "https://api.github.com/orgs/dutifuldev/repos?type=all&per_page=100&page=2",
-      "https://api.github.com/repos/dutifuldev/scratch",
-      "https://api.github.com/repos/dutifuldev/tools"
+      "https://api.github.com/users/example-org",
+      "https://api.github.com/orgs/example-org/repos?type=all&per_page=100",
+      "https://api.github.com/orgs/example-org/repos?type=all&per_page=100&page=2",
+      "https://api.github.com/repos/example-org/scratch",
+      "https://api.github.com/repos/example-org/tools"
     ]);
     expect(progress[0]).toBe("start:2");
     expect(progress.at(-1)?.startsWith("2/2:")).toBe(true);
     expect(new Set(progress.slice(1).map((item) => item.replace(/^\d+\/\d+:/, "")))).toEqual(
-      new Set(["dutifuldev/scratch", "dutifuldev/tools"])
+      new Set(["example-org/scratch", "example-org/tools"])
     );
   });
 
@@ -66,7 +66,7 @@ describe("RestGitHubClient.listOwnerRepos", () => {
         ["https://api.github.com/users/osolmaz", { type: "User" }],
         [
           "https://api.github.com/user/repos?visibility=all&affiliation=owner,collaborator&per_page=100",
-          [repoListItem("osolmaz", "brokerkit"), repoListItem("dutifuldev", "tools")]
+          [repoListItem("osolmaz", "brokerkit"), repoListItem("example-org", "tools")]
         ],
         [
           "https://api.github.com/user/repos?visibility=all&affiliation=owner,collaborator&per_page=100&page=2",
