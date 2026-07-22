@@ -17,7 +17,7 @@ describe("formatPlan", () => {
       formatPlan([
         {
           name: "scratch",
-          fullName: "dutifuldev/scratch",
+          fullName: "osolmaz/scratch",
           archived: false,
           settingChanges: [{ key: "allow_auto_merge", current: false, desired: true }],
           ruleset: { action: "create" }
@@ -28,7 +28,7 @@ describe("formatPlan", () => {
         "Plan: 1 repository",
         "1 with changes, 0 already clean",
         "",
-        "changes dutifuldev/scratch",
+        "changes osolmaz/scratch",
         "  Settings",
         "    allow_auto_merge            false -> true",
         "  Ruleset   create"
@@ -41,7 +41,7 @@ describe("formatPlan", () => {
       formatPlan([
         {
           name: "scratch",
-          fullName: "dutifuldev/scratch",
+          fullName: "osolmaz/scratch",
           archived: false,
           settingChanges: [],
           ruleset: { action: "none" }
@@ -52,7 +52,7 @@ describe("formatPlan", () => {
         "Plan: 1 repository",
         "0 with changes, 1 already clean",
         "",
-        "clean dutifuldev/scratch",
+        "clean osolmaz/scratch",
         "  Settings  no changes",
         "  Ruleset   no changes"
       ].join("\n")
@@ -64,7 +64,7 @@ describe("formatPlan", () => {
       formatPlan([
         {
           name: "scratch",
-          fullName: "dutifuldev/scratch",
+          fullName: "osolmaz/scratch",
           archived: false,
           settingChanges: [],
           ruleset: { action: "none", coveredBy: "Protect main" }
@@ -75,7 +75,7 @@ describe("formatPlan", () => {
         "Plan: 1 repository",
         "0 with changes, 1 already clean",
         "",
-        "clean dutifuldev/scratch",
+        "clean osolmaz/scratch",
         "  Settings  no changes",
         "  Ruleset   no changes (covered by Protect main)"
       ].join("\n")
@@ -88,7 +88,7 @@ describe("formatPlan", () => {
         [
           {
             name: "scratch",
-            fullName: "dutifuldev/scratch",
+            fullName: "osolmaz/scratch",
             archived: false,
             settingChanges: [],
             ruleset: { action: "none" }
@@ -112,14 +112,14 @@ describe("planHasChanges", () => {
   it("detects clean and changed plans", () => {
     const cleanPlan = {
       name: "clean",
-      fullName: "dutifuldev/clean",
+      fullName: "example-org/clean",
       archived: false,
       settingChanges: [],
       ruleset: { action: "none" as const }
     };
     const changedPlan = {
       name: "changed",
-      fullName: "dutifuldev/changed",
+      fullName: "example-org/changed",
       archived: false,
       settingChanges: [{ key: "allow_auto_merge" as const, current: false, desired: true }],
       ruleset: { action: "none" as const }

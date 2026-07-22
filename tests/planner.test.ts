@@ -21,11 +21,11 @@ describe("buildPlan", () => {
     });
 
     await expect(
-      buildPlan(client, { owner: "dutifuldev", repos: ["scratch"], all: false })
+      buildPlan(client, { owner: "example-org", repos: ["scratch"], all: false })
     ).resolves.toEqual([
       {
         name: "scratch",
-        fullName: "dutifuldev/scratch",
+        fullName: "example-org/scratch",
         archived: false,
         settingChanges: [
           { key: "allow_auto_merge", current: false, desired: true },
@@ -45,7 +45,7 @@ describe("buildPlan", () => {
     });
 
     await expect(
-      buildPlan(client, { owner: "dutifuldev", repos: ["scratch"], all: false })
+      buildPlan(client, { owner: "example-org", repos: ["scratch"], all: false })
     ).resolves.toMatchObject([{ ruleset: { action: "none", coveredBy: "Protect main" } }]);
   });
 
@@ -58,7 +58,7 @@ describe("buildPlan", () => {
     });
 
     await expect(
-      buildPlan(client, { owner: "dutifuldev", repos: ["scratch"], all: false })
+      buildPlan(client, { owner: "example-org", repos: ["scratch"], all: false })
     ).resolves.toMatchObject([{ ruleset: { action: "create" } }]);
   });
 
@@ -71,7 +71,7 @@ describe("buildPlan", () => {
     });
 
     await expect(
-      buildPlan(client, { owner: "dutifuldev", repos: ["scratch"], all: false })
+      buildPlan(client, { owner: "example-org", repos: ["scratch"], all: false })
     ).resolves.toMatchObject([{ ruleset: { action: "update" } }]);
   });
 
@@ -96,7 +96,7 @@ describe("buildPlan", () => {
 
     const plans = await buildPlan(
       client,
-      { owner: "dutifuldev", repos: [], all: true },
+      { owner: "example-org", repos: [], all: true },
       {
         concurrency: 2,
         progress: {
@@ -185,7 +185,7 @@ function baseRepo(name = "scratch"): GitHubRepo {
   return {
     ...DESIRED_REPO_SETTINGS,
     name,
-    full_name: `dutifuldev/${name}`,
+    full_name: `example-org/${name}`,
     archived: false,
     disabled: false,
     default_branch: "main"

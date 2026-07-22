@@ -5,7 +5,7 @@ These instructions apply to this repository.
 ## Slophammer Standards
 
 This repository follows the TypeScript guidance from
-`dutifuldev/slophammer/docs/AGENT_ENTRYPOINT.md`.
+`osolmaz/slophammer/docs/AGENT_ENTRYPOINT.md`.
 
 ## Local Checks
 

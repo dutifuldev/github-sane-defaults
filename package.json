@@ -6,12 +6,12 @@
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/dutifuldev/github-sane-defaults.git"
+    "url": "git+https://github.com/osolmaz/github-sane-defaults.git"
   },
   "bugs": {
-    "url": "https://github.com/dutifuldev/github-sane-defaults/issues"
+    "url": "https://github.com/osolmaz/github-sane-defaults/issues"
   },
-  "homepage": "https://github.com/dutifuldev/github-sane-defaults#readme",
+  "homepage": "https://github.com/osolmaz/github-sane-defaults#readme",
   "keywords": [
     "github",
     "repository",

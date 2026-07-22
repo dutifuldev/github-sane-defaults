@@ -41,7 +41,7 @@ jobs:
 
           const pkg = JSON.parse(readFileSync("package.json", "utf8"));
           const expectedName = "github-sane-defaults";
-          const expectedRepoUrl = "https://github.com/dutifuldev/github-sane-defaults";
+          const expectedRepoUrl = "https://github.com/osolmaz/github-sane-defaults";
           const expectedBin = "dist/src/cli/main.js";
 
           const normalizeRepoUrl = (value) =>

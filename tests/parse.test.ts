@@ -16,14 +16,14 @@ describe("parseRepo", () => {
       parseRepo({
         ...DESIRED_REPO_SETTINGS,
         name: "scratch",
-        full_name: "dutifuldev/scratch",
+        full_name: "osolmaz/scratch",
         archived: false,
         disabled: false,
         default_branch: "main"
       })
     ).toMatchObject({
       name: "scratch",
-      full_name: "dutifuldev/scratch",
+      full_name: "osolmaz/scratch",
       allow_auto_merge: true
     });
   });
@@ -34,7 +34,7 @@ describe("parseRepo", () => {
         ...DESIRED_REPO_SETTINGS,
         squash_merge_commit_title: "OTHER",
         name: "scratch",
-        full_name: "dutifuldev/scratch",
+        full_name: "osolmaz/scratch",
         archived: false,
         disabled: false,
         default_branch: "main"
@@ -48,7 +48,7 @@ describe("parseRepo", () => {
         ...DESIRED_REPO_SETTINGS,
         squash_merge_commit_message: "OTHER",
         name: "scratch",
-        full_name: "dutifuldev/scratch",
+        full_name: "osolmaz/scratch",
         archived: false,
         disabled: false,
         default_branch: "main"
@@ -76,8 +76,8 @@ describe("parseRepoNames", () => {
   it("parses repository names from GitHub list responses", () => {
     expect(
       parseRepoNames([
-        { name: "scratch", full_name: "dutifuldev/scratch" },
-        { name: "bob", full_name: "dutifuldev/bob" }
+        { name: "scratch", full_name: "osolmaz/scratch" },
+        { name: "bob", full_name: "osolmaz/bob" }
       ])
     ).toEqual(["scratch", "bob"]);
   });
@@ -91,19 +91,19 @@ describe("parseRepoListItems", () => {
   it("parses repository owner logins from list responses", () => {
     expect(
       parseRepoListItems([
-        { name: "scratch", full_name: "dutifuldev/scratch", owner: { login: "dutifuldev" } },
+        { name: "scratch", full_name: "osolmaz/scratch", owner: { login: "osolmaz" } },
         { name: "bob", full_name: "osolmaz/bob", owner: { login: "osolmaz" } }
       ])
     ).toEqual([
-      { name: "scratch", full_name: "dutifuldev/scratch", owner_login: "dutifuldev" },
+      { name: "scratch", full_name: "osolmaz/scratch", owner_login: "osolmaz" },
       { name: "bob", full_name: "osolmaz/bob", owner_login: "osolmaz" }
     ]);
   });
 
   it("rejects list responses without owner logins", () => {
-    expect(() =>
-      parseRepoListItems([{ name: "scratch", full_name: "dutifuldev/scratch" }])
-    ).toThrow("repo.owner");
+    expect(() => parseRepoListItems([{ name: "scratch", full_name: "osolmaz/scratch" }])).toThrow(
+      "repo.owner"
+    );
   });
 });
 
